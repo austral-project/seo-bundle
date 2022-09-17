@@ -1,0 +1,122 @@
+pages:
+  names:
+    seoRedirection:
+      singular:                                 Redirection
+      plural:                                   Redirections
+    seoRedirectionByDomain:
+      singular:                                 "Redirection : %domainName%"
+      plural:                                   "Redirections : %domainName%"
+    seoRedirectionForAllDomain:
+      singular:                                 "Redirection pour tous les domaines"
+      plural:                                   "Redirections pour tous les domaines"
+    seo:
+      singular:                                 Seo
+      plural:                                   Seo
+    seoSeo:
+      singular:                                 Optimisation du SEO
+      plural:                                   Optimisation du SEO
+      subTitle:                                 Vue d’ensembles des titres et descriptions des pages
+      buttons:
+        seoSeo:                                 Titres & descriptions
+        seoSeoUrl:                              Urls
+        seoSeoAll:                              Résultats Google
+        seoSeoByDomain:                         Titres & descriptions
+        seoSeoByDomainUrl:                      Urls
+        seoSeoByDomainAll:                      Résultats Google
+        seoUrlConflict:                         Urls
+    seoUrlConflict:
+      singular:                                 Url en conflit
+      plural:                                   Urls en conflit
+      subTitle:                                 Overview conflict of Urls
+    seoSeoByDomain:
+      singular:                                 "Optimisation du SEO - %domainName%"
+      plural:                                   "Optimisation du SEO - %domainName%"
+      subTitle:                                 Vue d’ensembles des titres et descriptions des pages
+    seoSeoForAllDomain:
+      singular:                                 "Optimisation du SEO"
+      plural:                                   "Optimisation du SEO"
+      subTitle:                                 Vue d’ensembles des titres et descriptions des pages
+    seoSeoUrl:
+      singular:                                 Optimisation du SEO
+      plural:                                   Optimisation du SEO
+    seoSeoAll:
+      singular:                                 Optimisation du SEO
+      plural:                                   Optimisation du SEO
+
+actions:
+  goTo:                                         Allez sur la page
+
+seo:
+  entitled:
+    columns:
+      title:                                    Nom de la page
+
+help:
+  refH1:                                        Si nul, le nom sera utilisé
+
+fieldset:
+  urlParametersConfiguration:                   Paramètres de la page
+  urlParametersConfigurationByDomain:           "Paramètres de la page : %domainName%"
+
+fields:
+  status:
+    entitled:                                   Statut
+  statusGlobal:
+    entitled:                                   Status global
+  refH1:
+    entitled:                                   Titre H1
+    placeholder:                                Si non renseigné, utilisation du titre principal
+  seoTitle:
+    entitled:                                   Titre du navigateur
+  seoDescription:
+    entitled:                                   Description metadata
+  pathLast:
+    entitled:                                   url de la page
+  seoCanonical:
+    entitled:                                   Url canonical
+  isIndex:
+    entitled:                                   Index
+    information:                                Permet d’indiquer si une page peut être indexée par les moteurs de recherche.
+  isFollow:
+    entitled:                                   Follow
+    information:                                Permet d’indiquer si les moteurs de recherche peuvent suivre les liens présents dans la page
+  inSitemap:
+    entitled:                                   Sitemap
+    information:                                Permet d’indiquer si une page peut être indexée par les moteurs de recherche.
+  urlSource:
+    entitled:                                   Url source
+  urlDestination:
+    entitled:                                   Url de destination
+  statusCode:
+    entitled:                                   Statut code
+  relationEntityName:
+    entitled:                                   Relation - Entity Name
+  relationEntityId:
+    entitled:                                   Relation - Entity id
+  isAutoGenerate:
+    entitled:                                   Est auto generé ?
+  internalLink:
+    entitled:                                   Lien interne
+
+groups:
+  seo:                                          SEO de la page
+  robots:                                       Moteurs de recherche
+  social_network:                               Partage sur les réseaux sociaux
+
+choices:
+  status:
+    unpublished:                                Désactivé
+    draft:                                      Brouillon
+    published:                                  Publié
+
+configuration:
+  check:
+    modules:
+      Seo:
+        title:                                  Seo bundle
+        redirection:
+          entitled:                             Redirection auto ?
+        refTitle:
+          entitled:                             Nombre de caractères pour la balise meta titre
+        refDescription:
+          entitled:                             Nombre de caractères pour la balise meta description

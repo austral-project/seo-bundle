@@ -1,0 +1,6 @@
+{% if form.mapper.object.refUrl is defined and form.mapper.object.refUrl %}
+  <a class="link button solid full h40 mt20 mb20" href="{{ path('austral_website_page', {slug: form.mapper.object.refUrl }) }}" target="_blank">
+    <span class="entitled">{{ "actions.goTo"|trans({}, "form") }}</span>
+    <span class="picto austral-picto-corner-forward"></span>
+  </a>
+{% endif %}

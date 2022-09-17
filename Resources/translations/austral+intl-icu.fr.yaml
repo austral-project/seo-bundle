@@ -1,0 +1,34 @@
+dashboard:
+  tiles:
+    urls:
+      published:
+        entitled: >-
+                  {count, plural,
+                      =0    { Url accessible }
+                      one   { Url accessible }
+                      other { Urls accessibles }
+                  }
+      draft:
+        entitled: >-
+                  {count, plural,
+                      =0    { Url privée }
+                      one   { Url privée }
+                      other { Urls privées }
+                  }
+      conflicts:
+        entitled: >-
+                  {count, plural,
+                      =0    { Url en conflit }
+                      one   { Url en conflit }
+                      other { Urls en conflits }
+                  }
+
+pages:
+  names:
+    seoRedirectionByDomain:
+      subTitle: >-
+                {count, plural,
+                    =0    { 0 redirection }
+                    one   { 1 redirection }
+                    other { # redirections }
+                }

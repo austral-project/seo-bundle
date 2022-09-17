@@ -1,0 +1,123 @@
+pages:
+  names:
+    seoRedirection:
+      singular:                                 Redirection
+      plural:                                   Redirections
+    seoRedirectionByDomain:
+      singular:                                 "Redirection : %domainName%"
+      plural:                                   "Redirections : %domainName%"
+    seoRedirectionForAllDomain:
+      singular:                                 "Redirection for all domains"
+      plural:                                   "Redirections for all domains"
+    seo:
+      singular:                                 Seo
+      plural:                                   Seo
+    seoSeo:
+      singular:                                 Optimisation Seo
+      plural:                                   Optimisation Seo
+      subTitle:                                 Overview of titles and descriptions of pages
+      buttons:
+        seoSeo:                                 Titles & descriptions
+        seoSeoUrl:                              Urls
+        seoSeoAll:                              Google viewer
+        seoSeoByDomain:                         Titles & descriptions
+        seoSeoByDomainUrl:                      Urls
+        seoSeoByDomainAll:                      Google viewer
+        seoUrlConflict:                         Urls
+    seoUrlConflict:
+      singular:                                 Url conflict
+      plural:                                   Urls conflict
+      subTitle:                                 Overview conflict of Urls
+    seoSeoByDomain:
+      singular:                                 "Optimisation Seo - %domain%"
+      plural:                                   "Optimisation Seo - %domain%"
+      subTitle:                                 Overview of titles and descriptions of pages
+    seoSeoForAllDomain:
+      singular:                                 "Optimisation du SEO"
+      plural:                                   "Optimisation du SEO"
+      subTitle:                                 Vue d’ensembles des titres et descriptions des pages
+    seoSeoUrl:
+      singular:                                 Optimisation Seo
+      plural:                                   Optimisation Seo
+    seoSeoAll:
+      singular:                                 Optimisation Seo
+      plural:                                   Optimisation Seo
+
+actions:
+  goTo:                                         Go to page
+
+seo:
+  entitled:
+    columns:
+      title:                                    Page name
+
+help:
+  refH1:                                        If null, name used
+
+fieldset:
+  urlParametersConfiguration:                   Page parameters
+  urlParametersConfigurationByDomain:           "Page parameters : %domainName%"
+
+fields:
+  status:
+    entitled:                                   Status
+  statusGlobal:
+    entitled:                                   Global status
+  refH1:
+    entitled:                                   Title H1
+    placeholder:                                If not filled in, use of the main title
+  seoTitle:
+    entitled:                                   Browser title
+  seoDescription:
+    entitled:                                   Description metadata
+  pathLast:
+    entitled:                                   Page Path
+  seoCanonical:
+    entitled:                                   Canonical Url
+  isIndex:
+    entitled:                                   Index
+    information:                                Used to indicate whether a page can be indexed by search engines.
+  isFollow:
+    entitled:                                   Follow
+    information:                                Used to indicate whether search engines can follow the links on the page.
+  inSitemap:
+    entitled:                                   Sitemap
+    information:                                Used to indicate whether this page can be to add in the sitemap.
+  urlSource:
+    entitled:                                   Source Url
+  urlDestination:
+    entitled:                                   Destination Url
+  statusCode:
+    entitled:                                   Status code
+  relationEntityName:
+    entitled:                                   Entity name relation
+  relationEntityId:
+    entitled:                                   Entity id relation
+  isAutoGenerate:
+    entitled:                                   Is Auto generate ?
+  internalLink:
+    entitled:                                   Internal link
+
+groups:
+  seo:                                          Seo of the page
+  robots:                                       Search engine
+  social_network:                               Sharing on social network
+
+
+choices:
+  status:
+    unpublished:                                Disabled
+    draft:                                      Draft
+    published:                                  Published
+
+configuration:
+  check:
+    modules:
+      Seo:
+        title:                                  Seo bundle
+        redirection:
+          entitled:                             Redirection auto ?
+        refTitle:
+          entitled:                             Numbers of characters for meta title
+        refDescription:
+          entitled:                             Numbers of characters for meta description

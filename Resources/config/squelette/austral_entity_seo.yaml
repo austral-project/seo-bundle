@@ -1,0 +1,6 @@
+austral_entity_seo:
+  redirection:
+    auto:               true
+  nb_characters:
+    ref_title:          70
+    ref_description:    150

@@ -1,0 +1,20 @@
+services:
+  _defaults:
+    autowire:       true
+    autoconfigure:  true
+    public:         true
+
+##### Listener
+
+  austral.seo.form.listener:
+    class:          Austral\SeoBundle\Listener\FormListener
+    arguments:
+      - "@austral.seo.url_parameter.management"
+      - "@austral.seo.url_parameter_form_type"
+      - "@austral.http.domains.management"
+      - "@austral.seo.config"
+      - "@router"
+      - "@security.authorization_checker"
+    tags:
+      - { name: kernel.event_listener, event: "austral.event.form.add_auto_fields_after", method: formAddAutoFields }
+      - { name: kernel.event_listener, event: "austral.event.form.add_auto_fields_before", method: formAddAutoFields }

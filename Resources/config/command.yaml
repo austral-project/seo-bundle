@@ -1,0 +1,9 @@
+services:
+  _defaults:
+    public:       false
+
+##### Command to generate Url Parameters
+  austral.seo.url_parameter.command:
+    class:        Austral\SeoBundle\Command\UrlParameterCommand
+    tags:
+      - { name: console.command, command: "austral:seo:url-parameter" }

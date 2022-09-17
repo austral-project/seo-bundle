@@ -1,0 +1,10 @@
+{%- if field.parameters.attr.pictoSelect is defined and field.parameters.attr.pictoSelect -%}
+  <span class="pictoSelect basic-pictosimply-down"></span>
+{%- endif -%}
+
+
+{% set basePath = form.view.vars.data.getBasePath() %}
+{% set basePathSplit = basePath|split('/') %}
+{# &#x202d; -> Allows you to change the direction of the text display from left to right. Use to counterbalance CSS text-overflow #}
+<span class="input-before" title="&#x202d;{{ basePath }}"><bdi>{{ ((basePathSplit|length > 3) ? ".../")~basePathSplit[((basePathSplit|length > 3) ? 2 : 0):]|join('/') }}</bdi></span>
+{{ field.input|raw() }}

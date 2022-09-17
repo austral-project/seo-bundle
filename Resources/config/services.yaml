@@ -1,0 +1,69 @@
+services:
+  _defaults:
+    public:       true
+
+
+##### Austral Event Subscriber
+  austral.seo.event_subscriber:
+    class:        Austral\SeoBundle\EventSubscriber\PagesSubscriber
+    tags:
+      - { name: kernel.event_subscriber }
+
+##### Services #####
+
+  austral.seo.url_parameter.management:
+    class:        Austral\SeoBundle\Services\UrlParameterManagement
+    arguments:    [ "@austral.entity.mapping", "@event_dispatcher","@austral.entity_manager", "@austral.seo.config", "@austral.http.domains.management" ]
+
+  austral.seo.redirection.management:
+    class: Austral\SeoBundle\Services\RedirectionManagement
+    arguments: [ "@austral.seo.config", "@austral.entity_manager.redirection"]
+
+
+  ##### Listener #####
+
+  austral.seo.doctrine.listener:
+    class:        Austral\SeoBundle\Listener\DoctrineListener
+    arguments:    ["@austral.seo.redirection.management"]
+    tags:
+      - { name: doctrine.event_subscriber, connection: default }
+
+  austral.seo.entity_mapping.listener:
+    class:        Austral\SeoBundle\Listener\EntityMappingListener
+    arguments:
+      - "@service_container"
+    tags:
+      - { name: kernel.event_listener, event: "austral.event.entity.initialise.mapping", method: mapping }
+
+  austral.seo.entity_manager.listener:
+    class:          Austral\SeoBundle\Listener\EntityManagerListener
+    arguments:    ["@austral.entity.mapping","@austral.seo.url_parameter.management"]
+    tags:
+      - { name: kernel.event_listener, event: "austral.entity_manager.duplicate", method: duplicateUrlParameter }
+      - { name: kernel.event_listener, event: "austral.entity_manager.update", method: updateUrlParameter }
+      - { name: kernel.event_listener, event: "austral.entity_manager.delete", method: deleteUrlParameter }
+
+##### Entities Manager #####
+
+  ##### Url Parameter Entity Manager
+  austral.entity_manager.url_parameter:
+    class:        Austral\SeoBundle\EntityManager\UrlParameterEntityManager
+    arguments:    [ "@doctrine.orm.entity_manager",  "@event_dispatcher", "%austral.entity.url_parameter.class%" ]
+
+  ##### Redirection Entity Manager
+  austral.entity_manager.redirection:
+    class:        Austral\SeoBundle\EntityManager\RedirectionEntityManager
+    arguments:    [ "@doctrine.orm.entity_manager",  "@event_dispatcher", "%austral.entity.redirection.class%" ]
+
+##### Parameters #####
+  austral.seo.config:
+    class:        Austral\SeoBundle\Configuration\SeoConfiguration
+    arguments:    ["%austral_entity_seo%"]
+
+
+##### Form Type #####
+  austral.seo.url_parameter_form_type:
+    class:        Austral\SeoBundle\Form\Type\UrlParameterFormType
+    arguments:    [ "@security.authorization_checker" ]
+    tags:
+      - { name: form.type , alias: austral_url_parameter_form_type }

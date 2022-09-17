@@ -1,0 +1,79 @@
+services:
+  _defaults:
+    autowire:       false
+    autoconfigure:  false
+    public:         true
+
+  ##### Listener
+  austral.seo.configuration_checker.listener:
+    class:          Austral\SeoBundle\Listener\ConfigurationCheckerListener
+    arguments:      ["@austral.seo.config"]
+    tags:
+      - { name: kernel.event_listener, event: "austral.event.admin.configuration_checker", method: configurationChecker }
+
+  austral.seo.dashboard.listener:
+    class:          Austral\SeoBundle\Listener\DashboardListener
+    arguments:      [ "@austral.seo.url_parameter.management" ]
+    tags:
+      - { name: kernel.event_listener, event: "austral.event.admin.dashboard", method: dashboard }
+
+  austral.seo.module.listener:
+    class:          Austral\SeoBundle\Listener\ModuleListener
+    arguments:      ["@?austral.http.domains.management", "@?austral.entity_file.link.generator"]
+    tags:
+      - { name: kernel.event_listener, event: "austral.event.module.admin.add", method: moduleAdd }
+
+parameters:
+
+  austral.admin.class.seo.class:                                    Austral\SeoBundle\Admin\SeoAdmin
+  austral.admin.class.redirection.class:                            Austral\SeoBundle\Admin\RedirectionAdmin
+  austral.admin.class.urlConflict.class:                            Austral\SeoBundle\Admin\UrlConflictAdmin
+
+  austral.admin.modules.entity_seo_bundle.seoConfig.enabled:              true
+  austral.admin.modules.entity_seo_bundle.seoConfig.seo.enabled:          true
+  austral.admin.modules.entity_seo_bundle.seoConfig.urlConflict.enabled:  true
+  austral.admin.modules.entity_seo_bundle.seoConfig.redirection.enabled:  true
+
+  austral_admin.modules.entity_seo_bundle:
+    seoConfig:
+      enabled:                    "%austral.admin.modules.entity_seo_bundle.seoConfig.enabled%"
+      navigation:
+        position:                 520
+      name:                       "Seo"
+      picto:                      "austral-picto-search"
+      route:                      "seo"
+      translate:                  "male_c"
+      actions:
+        index:                    "listChildrenModules"
+      children:
+        redirection:
+          enabled:                "%austral.admin.modules.entity_seo_bundle.seoConfig.redirection.enabled%"
+          name:                   "Redirection"
+          pictoTile:              "parameters"
+          picto:                  "austral-picto-repeat"
+          route:                  "redirection"
+          class:                  "%austral.admin.class.redirection.class%"
+          translate:              "female_c"
+          truncate:               true
+        seo:
+          enabled:                "%austral.admin.modules.entity_seo_bundle.seoConfig.seo.enabled%"
+          name:                   "Seo"
+          picto:                  "austral-picto-file-text"
+          pictoTile:              "parameters"
+          route:                  "seo"
+          class:                  "%austral.admin.class.seo.class%"
+          actions:
+            index:                "index"
+            url:                  "url"
+            all:                  "all"
+          translate:              "male_c"
+        urlConflict:
+          enabled:                "%austral.admin.modules.entity_seo_bundle.seoConfig.urlConflict.enabled%"
+          name:                   "Urls conflicts"
+          picto:                  "austral-picto-file-text"
+          pictoTile:              "parameters"
+          route:                  "url-conflict"
+          class:                  "%austral.admin.class.urlConflict.class%"
+          actions:
+            index:                "index"
+          translate:              "male_c"

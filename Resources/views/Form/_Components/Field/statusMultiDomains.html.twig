@@ -1,0 +1,12 @@
+<ul class="list-status-by-domains">
+  {% for urlParameter in field.vars.urlParameters %}
+    <li>
+      <span class="link" data-click-actions="anchor-collapse" data-collapse-id="{{ urlParameter.id }}">
+        <span class="domain-name">{{ urlParameter.domain }}</span>
+        <div class="content-status">
+          <span class="picto-circle status-{{ urlParameter.status }}"></span>
+        </div>
+      </span>
+    </li>
+  {% endfor %}
+</ul>

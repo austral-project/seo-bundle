@@ -1,0 +1,10 @@
+parameters:
+
+##### Entities Class
+  austral.entity.redirection.class:                                     App\Entity\Austral\SeoBundle\Redirection
+  austral.entity.url_parameter.class:                                   App\Entity\Austral\SeoBundle\UrlParameter
+
+##### Doctrine Resolve target Entities
+  austral.resolve_target_entities.seo:
+    Austral\SeoBundle\Entity\Interfaces\RedirectionInterface:           "%austral.entity.redirection.class%"
+    Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface:          "%austral.entity.url_parameter.class%"
