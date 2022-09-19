@@ -55,16 +55,29 @@ class RedirectionEntityManager extends EntityManager
   }
 
   /**
-   * @param $urlSource
-   * @param string $domainId
+   * @param string $urlSource
+   * @param string|null $domainId
    * @param string|null $language
    *
    * @return int|mixed|string|null
    * @throws NonUniqueResultException
    */
-  public function retreiveByUrlSource($urlSource, string $domainId, string $language = null)
+  public function retreiveByUrlSource(string $urlSource, string $domainId = null, string $language = null)
   {
     return $this->repository->retreiveByUrlSource($urlSource, $domainId, $language);
+  }
+
+  /**
+   * @param string $urlDestination
+   * @param string|null $domainId
+   * @param string|null $language
+   *
+   * @return int|mixed|string|null
+   * @throws NonUniqueResultException
+   */
+  public function retreiveByUrlDestination(string $urlDestination, string $domainId = null, string $language = null)
+  {
+    return $this->repository->retreiveByUrlDestination($urlDestination, $domainId, $language);
   }
 
 }

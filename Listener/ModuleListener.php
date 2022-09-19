@@ -53,16 +53,16 @@ class ModuleListener
   {
     if($moduleEvent->getModule()->getModuleKey() === "seo" && $this->domains)
     {
-
-      /** @var Module $subModule */
-      foreach($moduleEvent->getModule()->getChildren() as $subModule)
-      {
-        $moduleEvent->getModules()->removeModule($subModule);
-      }
-
       if($this->domains->getEnabledDomainWithoutVirtual() > 1) {
+
+        /** @var Module $subModule */
+        foreach($moduleEvent->getModule()->getChildren() as $subModule)
+        {
+          $moduleEvent->getModules()->removeModule($subModule);
+        }
+
         $moduleChange = false;
-        $domains = $this->domains->getDomains();
+        $domains = $this->domains->getDomainsWithoutVirtual();
         /** @var DomainInterface $domain */
         foreach($domains as $domain)
         {

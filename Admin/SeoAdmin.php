@@ -87,7 +87,10 @@ class SeoAdmin extends Admin
     $request = $listAdminEvent->getRequest();
 
 
-    $domainId = $this->module->getParametersByKey("austral_filter_by_domain");
+    if(!$domainId = $this->module->getParametersByKey("austral_filter_by_domain"))
+    {
+      $domainId =$this->container->get('austral.http.domains.management')->getCurrentDomain()->getId();
+    }
 
     $formMapperMaster = new FormMapper($this->container->get('event_dispatcher'));
     $formMapperMaster->setTranslateDomain("austral")->setPathToTemplateDefault("@AustralAdmin/Form/Components/Fields");
@@ -101,13 +104,13 @@ class SeoAdmin extends Admin
     foreach($urlParametersByDomain as $urlParameter)
     {
       $object = $urlParameter->getObject();
-      if($object instanceof FilterByDomainInterface)
+      if($object instanceof FilterByDomainInterface && $domainId !== "current")
       {
         $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $object->getDomainId() ?? "for-all-domains");
       }
       else
       {
-        $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $domainId);
+        $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass());
       }
 
       $formMapper = new FormMapper($this->container->get('event_dispatcher'));
@@ -227,7 +230,6 @@ class SeoAdmin extends Admin
       $moduleMaster = $this->module->getParent();
     }
     $listAdminEvent->getTemplateParameters()->addParameters("moduleMaster", $moduleMaster);
-
     $listAdminEvent->getTemplateParameters()->setPath("@AustralSeo/Admin/Module/seo.html.twig");
     $listAdminEvent->getTemplateParameters()->addParameters("list", array(
       "forms"       =>  $forms,

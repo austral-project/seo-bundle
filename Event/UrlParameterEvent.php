@@ -24,7 +24,7 @@ class UrlParameterEvent extends Event
   const EVENT_END = "austral.seo.url_parameter.finish";
 
   /**
-   * PagesEvent constructor.
+   * UrlParameterEvent constructor.
    *
    */
   public function __construct()

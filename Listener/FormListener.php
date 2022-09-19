@@ -113,9 +113,9 @@ class FormListener
       }
       else
       {
-        if(count($this->domains->getDomains()) > 1)
+        if(count($this->domains->getDomainsWithoutVirtual()) > 1)
         {
-          foreach($this->domains->getDomains() as $domain)
+          foreach($this->domains->getDomainsWithoutVirtual() as $domain)
           {
             $urlParameters[] = $this->urlParameterManagement->getOrCreateUrlParameterByObject($object, $domain->getId());
           }

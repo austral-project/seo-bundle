@@ -93,12 +93,19 @@ class RedirectionManagement
     if($this->SeoConfiguration->get('redirection.auto'))
     {
       /** @var RedirectionInterface|null $redirection */
-      $redirection = $this->redirectionManager->retreiveByUrlSource($newRefUrl, $urlParameter->getLanguage());
+      if($redirectionUrlDestination = $this->redirectionManager->retreiveByUrlDestination($newRefUrl, $urlParameter->getDomainIdReel(), $urlParameter->getLanguage()))
+      {
+        $redirectionUrlDestination->setIsActive(false);
+        $this->redirectionsUpdate[$redirectionUrlDestination->getId()] = $redirectionUrlDestination;
+      }
+
+      /** @var RedirectionInterface|null $redirection */
+      $redirection = $this->redirectionManager->retreiveByUrlSource($newRefUrl, $urlParameter->getDomainIdReel(), $urlParameter->getLanguage());
       if($redirection && ($redirection->getRelationEntityName() !== $urlParameter->getClassnameForMapping() || $redirection->getRelationEntityId() == $urlParameter->getId()))
       {
         $redirectionOther = $redirection;
         $redirectionOther->setIsActive(false);
-        $this->redirectionsUpdate[] = $redirectionOther;
+        $this->redirectionsUpdate[$redirectionOther->getId()] = $redirectionOther;
         $redirection = null;
       }
       if(!$redirection)
@@ -113,7 +120,7 @@ class RedirectionManagement
       $redirection->setUrlDestination($newRefUrl);
       $redirection->setDomainId($urlParameter->getDomainId());
       $redirection->setLanguage($urlParameter->getLanguage());
-      $this->redirectionsUpdate[] = $redirection;
+      $this->redirectionsUpdate[$redirection->getId()] = $redirection;
     }
     return $this;
   }

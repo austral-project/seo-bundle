@@ -4,8 +4,8 @@ services:
 
 
 ##### Austral Event Subscriber
-  austral.seo.event_subscriber:
-    class:        Austral\SeoBundle\EventSubscriber\PagesSubscriber
+  austral.seo.url_parameter.event_subscriber:
+    class:        Austral\SeoBundle\EventSubscriber\UrlParameterSubscriber
     tags:
       - { name: kernel.event_subscriber }
 
@@ -13,11 +13,22 @@ services:
 
   austral.seo.url_parameter.management:
     class:        Austral\SeoBundle\Services\UrlParameterManagement
-    arguments:    [ "@austral.entity.mapping", "@event_dispatcher","@austral.entity_manager", "@austral.seo.config", "@austral.http.domains.management" ]
+    arguments:
+      - "@austral.entity.mapping"
+      - "@event_dispatcher"
+      - "@austral.entity_manager.url_parameter"
+      - "@austral.entity_manager"
+      - "@austral.seo.config"
+      - "@austral.http.domains.management"
+      - "@austral.seo.url_parameter.migrate"
 
   austral.seo.redirection.management:
     class: Austral\SeoBundle\Services\RedirectionManagement
     arguments: [ "@austral.seo.config", "@austral.entity_manager.redirection"]
+
+  austral.seo.url_parameter.migrate:
+    class: Austral\SeoBundle\Services\UrlParameterMigrate
+    arguments: [         "@austral.entity.mapping", "@austral.entity_file.compression"]
 
 
   ##### Listener #####

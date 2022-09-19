@@ -155,6 +155,11 @@ interface UrlParameterInterface
   /**
    * @return string|null
    */
+  public function getDomainIdReel(): ?string;
+
+  /**
+   * @return string|null
+   */
   public function getActionRelation(): ?string;
 
   /**

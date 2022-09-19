@@ -10,8 +10,6 @@
 
 namespace Austral\SeoBundle\Services;
 
-use App\Entity\Austral\SeoBundle\UrlParameter;
-use App\Entity\Austral\HttpBundle\Domain;
 use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\EntityBundle\Entity\Interfaces\FilterByDomainInterface;
 use Austral\EntityBundle\Entity\Interfaces\TreePageInterface;
@@ -21,6 +19,7 @@ use Austral\EntityBundle\Mapping\EntityMapping;
 use Austral\EntityBundle\Mapping\Mapping;
 use Austral\SeoBundle\Configuration\SeoConfiguration;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
+use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
 use Austral\SeoBundle\Event\UrlParameterEvent;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
 use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
@@ -54,14 +53,24 @@ class UrlParameterManagement
   protected EntityManagerORMInterface $entityManager;
 
   /**
+   * @var UrlParameterEntityManager
+   */
+  protected UrlParameterEntityManager $parameterEntityManager;
+
+  /**
    * @var SeoConfiguration
    */
   protected SeoConfiguration $SeoConfiguration;
 
   /**
-   * @var EventDispatcherInterface|null
+   * @var EventDispatcherInterface
    */
-  protected ?EventDispatcherInterface $dispatcher;
+  protected EventDispatcherInterface $dispatcher;
+
+  /**
+   * @var UrlParameterMigrate
+   */
+  protected UrlParameterMigrate $urlParameterMigrate;
 
   /**
    * @var array
@@ -109,36 +118,39 @@ class UrlParameterManagement
   protected array $nbUrlsStatusByDomains = array();
 
   /**
-   * @var Domain
+   * @var DomainInterface
    */
-  private Domain $domainAll;
+  private DomainInterface $domainForAll;
 
   /**
    * @param Mapping $mapping
    * @param EventDispatcherInterface $dispatcher
+   * @param UrlParameterEntityManager $parameterEntityManager
    * @param EntityManagerORMInterface $entityManager
    * @param SeoConfiguration $SeoConfiguration
    * @param DomainsManagement $domains
+   * @param UrlParameterMigrate $urlParameterMigrate
    *
    * @throws QueryException
+   * @throws \Exception
    */
   public function __construct(Mapping $mapping,
     EventDispatcherInterface $dispatcher,
+    UrlParameterEntityManager $parameterEntityManager,
     EntityManagerORMInterface $entityManager,
     SeoConfiguration $SeoConfiguration,
-    DomainsManagement $domains
+    DomainsManagement $domains,
+    UrlParameterMigrate $urlParameterMigrate
   )
   {
     $this->mapping = $mapping;
     $this->dispatcher = $dispatcher;
     $this->entityManager = $entityManager;
+    $this->parameterEntityManager = $parameterEntityManager;
     $this->SeoConfiguration = $SeoConfiguration;
     $this->domains = $domains->initialize();
-    $this->domainAll = new Domain();
-    $this->domainAll->setLanguage($this->domains->getCurrentLanguage())
-      ->setDomain(null)
-      ->setId("all-domains")
-      ->setName("All Domains");
+    $this->domainForAll = $domains->getDomainForAll();
+    $this->urlParameterMigrate = $urlParameterMigrate;
     $this->initEntitiesMapping();
   }
 
@@ -186,7 +198,7 @@ class UrlParameterManagement
     }
 
     /** @var DomainInterface $domain */
-    foreach($this->domains->getDomains() as $domain)
+    foreach($this->domains->getDomainsWithoutVirtual() as $domain)
     {
       $this->urlsByDomains[$domain->getId()] = array(
         "domain" =>  $domain,
@@ -204,8 +216,27 @@ class UrlParameterManagement
         UrlParameterInterface::STATUS_UNPUBLISHED =>  0,
       );
     }
-    $this->urlsByDomains[$this->domainAll->getId()] = array(
-      "domain" =>  $this->domainAll,
+    if($this->domains->getEnabledDomainWithoutVirtual() === 0)
+    {
+
+      $this->urlsByDomains[$this->domains->getCurrentDomain()->getId()] = array(
+        "domain" =>  $this->domains->getCurrentDomain(),
+        "urls"    =>  array()
+      );
+      $this->urlsByDomainsWithTree[$this->domains->getCurrentDomain()->getId()] = array(
+        "domain" =>  $this->domains->getCurrentDomain(),
+        "urls"    =>  array()
+      );
+      $this->urlsConflictsByDomains[$this->domains->getCurrentDomain()->getId()] = array();
+      $this->urlsByDomainAndObjectKey[$this->domains->getCurrentDomain()->getId()] = array();
+      $this->nbUrlsStatusByDomains[$this->domains->getCurrentDomain()->getId()] = array(
+        UrlParameterInterface::STATUS_PUBLISHED =>  0,
+        UrlParameterInterface::STATUS_DRAFT =>  0,
+        UrlParameterInterface::STATUS_UNPUBLISHED =>  0,
+      );
+    }
+    $this->urlsByDomains[$this->domainForAll->getId()] = array(
+      "domain" =>  $this->domainForAll,
       "urls"    =>  array()
     );
 
@@ -231,24 +262,24 @@ class UrlParameterManagement
         {
           if(!$object instanceof FilterByDomainInterface || !$object->getDomainId())
           {
-            /** @var UrlParameter $defaultUrlParameters */
+            /** @var UrlParameterInterface $defaultUrlParameters */
             if($defaultUrlParameters = $this->getUrlParameterByObject($object, $domainMaster->getId()))
             {
-              if(!array_key_exists($defaultUrlParameters->getPath(), $this->urlsByDomains[$this->domainAll->getId()]["urls"]))
+              if(!array_key_exists($defaultUrlParameters->getPath(), $this->urlsByDomains[$this->domainForAll->getId()]["urls"]))
               {
                 $urlParameterForAllDomain = clone $defaultUrlParameters;
                 $urlParameterForAllDomain->setId(Uuid::uuid4()->toString());
                 /** @var UrlParameterMapping $urlParameterMapping */
                 $urlParameterMapping = $valuesByEntity["mapping"]->getEntityClassMapping(UrlParameterMapping::class);
                 $urlParameterForAllDomain->setKeyLink("{$urlParameterMapping->getKeyForObjectLink()}::{$object->getId()}");
-                $this->urlsByDomains[$this->domainAll->getId()]["urls"][$urlParameterForAllDomain->getPath()] = $urlParameterForAllDomain;
+                $this->urlsByDomains[$this->domainForAll->getId()]["urls"][$urlParameterForAllDomain->getPath()] = $urlParameterForAllDomain;
                 $this->objectKeyLinkNames[$urlParameterForAllDomain->getKeyLink()] = $object->__toString();
               }
             }
           }
         }
       }
-      ksort($this->urlsByDomains[$this->domainAll->getId()]["urls"]);
+      ksort($this->urlsByDomains[$this->domainForAll->getId()]["urls"]);
     }
     $this->dispatcher->dispatch($urlParameterEvent, UrlParameterEvent::EVENT_END);
 
@@ -261,6 +292,7 @@ class UrlParameterManagement
       );
       ksort($this->urlsByDomainsWithTree[$keyDomain]["urls"]);
     }
+
     return $this;
   }
 
@@ -427,9 +459,9 @@ class UrlParameterManagement
    * @param string|null $path
    * @param string $domainId
    *
-   * @return ?UrlParameter
+   * @return ?UrlParameterInterface
    */
-  public function retrieveUrlParameters(?string $path = null, string $domainId = "current"): ?UrlParameter
+  public function retrieveUrlParameters(?string $path = null, string $domainId = "current"): ?UrlParameterInterface
   {
     return AustralTools::getValueByKey($this->getUrlParametersByDomain($domainId), $path);
   }
@@ -437,9 +469,9 @@ class UrlParameterManagement
   /**
    * @param string $urlParameterId
    *
-   * @return ?UrlParameter
+   * @return ?UrlParameterInterface
    */
-  public function retrieveUrlParametersById(string $urlParameterId): ?UrlParameter
+  public function retrieveUrlParametersById(string $urlParameterId): ?UrlParameterInterface
   {
     return AustralTools::getValueByKey($this->objectUrlParameters, $urlParameterId, null);
   }
@@ -558,7 +590,7 @@ class UrlParameterManagement
       }
     }
 
-    /** @var UrlParameter $urlCompare */
+    /** @var UrlParameterInterface $urlCompare */
     if($urlCompare = AustralTools::getValueByKey($this->urlsByDomains[$urlParameter->getDomainId()]["urls"], $urlParameter->getPath()))
     {
       if($urlCompare->getId() !== $urlParameter->getId())
@@ -607,10 +639,10 @@ class UrlParameterManagement
   {
     $urlsParameters = $this->getUrlParametersByObject($objectSource);
     $this->addObjectRelationByClassnameAndId($object);
-    /** @var UrlParameter $urlParameter */
+    /** @var UrlParameterInterface $urlParameter */
     foreach($urlsParameters as $urlParameterSource)
     {
-      /** @var UrlParameter $urlParameter */
+      /** @var UrlParameterInterface|EntityInterface $urlParameter */
       $urlParameter = $this->entityManager->duplicate($urlParameterSource);
       $urlParameter->setId(Uuid::uuid4()->toString());
       $urlParameter->setLanguage($this->domains->getCurrentLanguage());
@@ -650,12 +682,16 @@ class UrlParameterManagement
       {
         $this->generateUrlParameterWithParent($object, $object->getDomainId());
       }
-      else
+      elseif($this->domains->getEnabledDomainWithoutVirtual() > 0)
       {
-        foreach ($this->domains->getDomains() as $domain)
+        foreach ($this->domains->getDomainsWithoutVirtual() as $domain)
         {
           $this->generateUrlParameterWithParent($object, $domain->getId());
         }
+      }
+      else
+      {
+        $this->generateUrlParameterWithParent($object);
       }
       $this->generateChildrenUrlParameters($object);
     }
@@ -671,7 +707,7 @@ class UrlParameterManagement
   {
     $urlsParameters = $this->getUrlParametersByObject($object);
 
-    /** @var UrlParameter $urlParameter */
+    /** @var UrlParameterInterface|EntityInterface $urlParameter */
     foreach($urlsParameters as $urlParameter)
     {
       $this->entityManager->delete($urlParameter, false);
@@ -683,9 +719,9 @@ class UrlParameterManagement
    * @param EntityInterface $object
    * @param string $domainId
    *
-   * @return UrlParameter
+   * @return UrlParameterInterface
    */
-  public function getOrCreateUrlParameterByObject(EntityInterface $object, string $domainId = "current"): UrlParameter
+  public function getOrCreateUrlParameterByObject(EntityInterface $object, string $domainId = "current"): UrlParameterInterface
   {
     if(!$urlParameter = $this->getUrlParameterByObject($object, $domainId))
     {
@@ -699,11 +735,11 @@ class UrlParameterManagement
    * @param EntityInterface $object
    * @param string $domainId
    *
-   * @return UrlParameter
+   * @return UrlParameterInterface
    */
-  protected function createUrlParameter(EntityInterface $object, string $domainId = "current"): UrlParameter
+  protected function createUrlParameter(EntityInterface $object, string $domainId = "current"): UrlParameterInterface
   {
-    $urlParameter = new UrlParameter();
+    $urlParameter = $this->parameterEntityManager->create();
     $urlParameter->setObjectRelation("{$object->getClassnameForMapping()}::{$object->getId()}");
     $urlParameter->setDomainId($this->getReelDomainId($domainId));
     $urlParameter->setDomain($this->domains->getDomainById($urlParameter->getDomainId()));
@@ -711,11 +747,11 @@ class UrlParameterManagement
   }
 
   /**
-   * @param UrlParameter $urlParameter
+   * @param UrlParameterInterface $urlParameter
    *
    * @return UrlParameterManagement
    */
-  public function generatePathWithUrlParameter(UrlParameter $urlParameter): UrlParameterManagement
+  public function generatePathWithUrlParameter(UrlParameterInterface $urlParameter): UrlParameterManagement
   {
     if(($object = $urlParameter->getObject()))
     {
@@ -736,7 +772,11 @@ class UrlParameterManagement
       }
       if(!$urlParameter->getPathLast())
       {
-        $urlParameter->setPathLast($object->$method());
+        $this->urlParameterMigrate->recoveryRefUrlPathValue($urlParameter, $object);
+        if(!$urlParameter->getPathLast())
+        {
+          $urlParameter->setPathLast($object->$method());
+        }
       }
     }
     return $this;
@@ -746,9 +786,10 @@ class UrlParameterManagement
    * @param EntityInterface $object
    * @param string $domainId
    *
-   * @return UrlParameter
+   * @return UrlParameterInterface
+   * @throws \Exception
    */
-  protected function generateUrlParameterWithParent(EntityInterface $object, string $domainId = "current"): UrlParameter
+  protected function generateUrlParameterWithParent(EntityInterface $object, string $domainId = "current"): UrlParameterInterface
   {
     $urlParameter = $this->getOrCreateUrlParameterByObject($object, $domainId);
     $this->generatePathWithUrlParameter($urlParameter);
@@ -763,6 +804,11 @@ class UrlParameterManagement
     {
       $urlParameter->setPath("{$urlParameter->getPathLast()}");
     }
+
+    $this->urlParameterMigrate->recoverySeoValues($urlParameter, $object);
+    $this->urlParameterMigrate->recoveryRobotValues($urlParameter, $object);
+    $this->urlParameterMigrate->recoverySocialValues($urlParameter, $object);
+
     $this->entityManager->update($urlParameter, false);
     $this->hydrateUrl($urlParameter);
     return $urlParameter;
@@ -771,11 +817,11 @@ class UrlParameterManagement
   /**
    * @param UrlParameterInterface $urlParameter
    *
-   * @return UrlParameter|null
+   * @return UrlParameterInterface|null
    */
-  public function updateUrlParameterWithParent(UrlParameterInterface $urlParameter): ?UrlParameter
+  public function updateUrlParameterWithParent(UrlParameterInterface $urlParameter): ?UrlParameterInterface
   {
-    /** @var UrlParameter $urlParameter */
+    /** @var EntityInterface $object */
     if($object = $urlParameter->getObject())
     {
       if($object instanceof TreePageInterface && $object->getTreePageParent())

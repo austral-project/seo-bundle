@@ -55,31 +55,77 @@ class RedirectionRepository extends EntityRepository
   }
 
   /**
-   * @param $urlSource
-   * @param string $domainId
+   * @param string $urlSource
+   * @param string|null $domainId
    * @param string|null $language
    *
    * @return int|mixed|string|null
    * @throws NonUniqueResultException
    */
-  public function retreiveByUrlSource($urlSource, string $domainId, string $language = null)
+  public function retreiveByUrlSource(string $urlSource, ?string $domainId = null, ?string $language = null)
   {
-    $query = $this->createQueryBuilder('root')
+    $queryBuilder = $this->createQueryBuilder('root')
       ->where('root.urlSource = :urlSource')
       ->andWhere('root.language = :language')
       ->andWhere('root.isActive = :isActive')
-      ->andWhere('root.domainId = :domainId')
       ->setParameters(
         array(
           "urlSource"   => $urlSource,
           "language"    => $language,
           "isActive"    =>  true,
-          "domainId"    =>  $domainId
         )
       )
       ->setMaxResults(1)
-      ->orderBy("root.updated", "DESC")
-      ->getQuery();
+      ->orderBy("root.updated", "DESC");
+
+    if($domainId) {
+      $queryBuilder->andWhere('root.domainId = :domainId')
+        ->setParameter("domainId", $domainId);
+    }
+    else {
+      $queryBuilder->andWhere('root.domainId IS NULL');
+    }
+    $query = $queryBuilder->getQuery();
+    try {
+      $object = $query->getSingleResult();
+    } catch (\Doctrine\Orm\NoResultException $e) {
+      $object = null;
+    }
+    return $object;
+  }
+
+  /**
+   * @param string $urlDestination
+   * @param string|null $domainId
+   * @param string|null $language
+   *
+   * @return int|mixed|string|null
+   * @throws NonUniqueResultException
+   */
+  public function retreiveByUrlDestination(string $urlDestination, ?string $domainId = null, ?string $language = null)
+  {
+    $queryBuilder = $this->createQueryBuilder('root')
+      ->where('root.urlDestination = :urlDestination')
+      ->andWhere('root.language = :language')
+      ->andWhere('root.isActive = :isActive')
+      ->setParameters(
+        array(
+          "urlDestination"   => $urlDestination,
+          "language"    => $language,
+          "isActive"    =>  true,
+        )
+      )
+      ->setMaxResults(1)
+      ->orderBy("root.updated", "DESC");
+
+    if($domainId && $domainId !== "current") {
+      $queryBuilder->andWhere('root.domainId = :domainId')
+        ->setParameter("domainId", $domainId);
+    }
+    else {
+      $queryBuilder->andWhere('root.domainId IS NULL');
+    }
+    $query = $queryBuilder->getQuery();
     try {
       $object = $query->getSingleResult();
     } catch (\Doctrine\Orm\NoResultException $e) {
