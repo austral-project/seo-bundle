@@ -68,6 +68,12 @@ class EntityManagerListener
     }
   }
 
+  /**
+   * @param EntityManagerEvent $entityManagerEvent
+   *
+   * @return void
+   * @throws \Exception
+   */
   public function updateUrlParameter(EntityManagerEvent $entityManagerEvent)
   {
     $object = $entityManagerEvent->getObject();
@@ -81,6 +87,11 @@ class EntityManagerListener
     }
   }
 
+  /**
+   * @param EntityManagerEvent $entityManagerEvent
+   *
+   * @return void
+   */
   public function deleteUrlParameter(EntityManagerEvent $entityManagerEvent)
   {
     if($this->hasUrlParameterMapping($entityManagerEvent->getObject()))

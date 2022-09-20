@@ -19,7 +19,7 @@ services:
 
   austral.seo.module.listener:
     class:          Austral\SeoBundle\Listener\ModuleListener
-    arguments:      ["@?austral.http.domains.management", "@?austral.entity_file.link.generator"]
+    arguments:      ["@austral.http.domains.management"]
     tags:
       - { name: kernel.event_listener, event: "austral.event.module.admin.add", method: moduleAdd }
 

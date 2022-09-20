@@ -10,6 +10,7 @@
 
 namespace Austral\SeoBundle\Event;
 
+use Austral\SeoBundle\Services\UrlParameterManagement;
 use Symfony\Contracts\EventDispatcher\Event;
 
 /**
@@ -24,11 +25,36 @@ class UrlParameterEvent extends Event
   const EVENT_END = "austral.seo.url_parameter.finish";
 
   /**
+   * @var UrlParameterManagement
+   */
+  private UrlParameterManagement $urlParameterManagement;
+
+  /**
    * UrlParameterEvent constructor.
    *
    */
-  public function __construct()
+  public function __construct(UrlParameterManagement $urlParameterManagement)
   {
+    $this->urlParameterManagement = $urlParameterManagement;
+  }
+
+  /**
+   * @return UrlParameterManagement
+   */
+  public function getUrlParameterManagement(): UrlParameterManagement
+  {
+    return $this->urlParameterManagement;
+  }
+
+  /**
+   * @param UrlParameterManagement $urlParameterManagement
+   *
+   * @return UrlParameterEvent
+   */
+  public function setUrlParameterManagement(UrlParameterManagement $urlParameterManagement): UrlParameterEvent
+  {
+    $this->urlParameterManagement = $urlParameterManagement;
+    return $this;
   }
 
 }

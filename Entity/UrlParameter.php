@@ -88,7 +88,7 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   
   /**
    * @var string|null
-   * @ORM\Column(name="social_description", type="string", length=255, nullable=true )
+   * @ORM\Column(name="social_description", type="text", nullable=true )
    */
   protected ?string $socialDescription = null;
 
@@ -114,6 +114,11 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
    * @ORM\Column(name="action_relation", type="string", length=255, nullable=true )
    */
   protected ?string $actionRelation = null;
+
+  /**
+   * @var array
+   */
+  protected array $actionParameters = array();
   
   /**
    * @var string|null
@@ -464,6 +469,37 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   public function setActionRelation(?string $actionRelation): UrlParameter
   {
     $this->actionRelation = $actionRelation;
+    return $this;
+  }
+
+  /**
+   * @return array
+   */
+  public function getActionParameters(): array
+  {
+    return $this->actionParameters;
+  }
+
+  /**
+   * @param string $key
+   * @param $value
+   *
+   * @return UrlParameter
+   */
+  public function addActionParameters(string $key, $value): UrlParameter
+  {
+    $this->actionParameters[$key] = $value;
+    return $this;
+  }
+
+  /**
+   * @param array $actionParameters
+   *
+   * @return UrlParameter
+   */
+  public function setActionParameters(array $actionParameters): UrlParameter
+  {
+    $this->actionParameters = $actionParameters;
     return $this;
   }
 

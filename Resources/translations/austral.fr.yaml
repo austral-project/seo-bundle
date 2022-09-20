@@ -39,9 +39,17 @@ pages:
     seoSeoUrl:
       singular:                                 Optimisation du SEO
       plural:                                   Optimisation du SEO
+    seoSeoByDomainUrl:
+      singular:                                 "Optimisation du SEO - %domainName%"
+      plural:                                   "Optimisation du SEO - %domainName%"
+      subTitle:                                 Vue d’ensembles des titres et descriptions des pages
     seoSeoAll:
       singular:                                 Optimisation du SEO
       plural:                                   Optimisation du SEO
+    seoSeoByDomainAll:
+      singular:                                 "Optimisation du SEO - %domainName%"
+      plural:                                   "Optimisation du SEO - %domainName%"
+      subTitle:                                 Vue d’ensembles des titres et descriptions des pages
 
 actions:
   goTo:                                         Allez sur la page

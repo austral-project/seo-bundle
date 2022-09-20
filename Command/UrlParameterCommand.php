@@ -10,6 +10,7 @@
 
 namespace Austral\SeoBundle\Command;
 
+use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Austral\ToolsBundle\Command\Base\Command;
@@ -104,9 +105,13 @@ EOF
     }
     if($input->getOption("generate"))
     {
+      /** @var DomainsManagement $domainsManagement */
+      $domainsManagement = $this->container->get('austral.http.domains.management');
+      $domainsManagement->initialize();
+
       /** @var UrlParameterManagement $urlParameterManagement */
       $urlParameterManagement = $this->container->get('austral.seo.url_parameter.management');
-      $urlParameterManagement->generateAllWithMapping();
+      $urlParameterManagement->initialize()->generateAllWithMapping();
     }
 
 

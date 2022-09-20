@@ -10,9 +10,12 @@
 
 namespace Austral\SeoBundle\Listener;
 
+use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\EntityBundle\Entity\Interfaces\TranslateChildInterface;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Entity\Redirection;
 use Austral\SeoBundle\Services\RedirectionManagement;
+use Austral\SeoBundle\Services\UrlParameterManagement;
 use Doctrine\Common\EventArgs;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Event\PostFlushEventArgs;
@@ -43,13 +46,19 @@ class DoctrineListener implements EventSubscriber
   protected RedirectionManagement $redirectionManagement;
 
   /**
+   * @var UrlParameterManagement
+   */
+  protected UrlParameterManagement $urlParametersManagement;
+
+  /**
    * DoctrineListener constructor.
    */
-  public function __construct(RedirectionManagement $redirectionManagement)
+  public function __construct(UrlParameterManagement $urlParametersManagement, RedirectionManagement $redirectionManagement)
   {
     $parts = explode('\\', $this->getNamespace());
     $this->name = end($parts);
     $this->redirectionManagement = $redirectionManagement;
+    $this->urlParametersManagement = $urlParametersManagement;
   }
 
   /**
@@ -67,12 +76,23 @@ class DoctrineListener implements EventSubscriber
    * @param PreUpdateEventArgs $args
    *
    * @throws NonUniqueResultException
-  */
+   * @throws \Exception
+   */
   public function preUpdate(PreUpdateEventArgs $args)
   {
+    /** @var EntityInterface $object */
     $object = $args->getObject();
+    if($object instanceof TranslateChildInterface)
+    {
+      $object = $object->getMaster();
+    }
+    if($this->urlParametersManagement->getObjectUrlParameterMapping($object))
+    {
+      $this->urlParametersManagement->generateUrlParameter($object);
+    }
     if($object instanceof UrlParameterInterface)
     {
+      $this->urlParametersManagement->updateUrlParameterWithParent($object);
       if($args->hasChangedField("path"))
       {
         $this->redirectionManagement->generateRedirectionAuto($object, $args->getNewValue("path"), $args->getOldValue("path"));

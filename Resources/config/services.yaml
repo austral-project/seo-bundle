@@ -21,6 +21,7 @@ services:
       - "@austral.seo.config"
       - "@austral.http.domains.management"
       - "@austral.seo.url_parameter.migrate"
+      - "@austral.tools.debug"
 
   austral.seo.redirection.management:
     class: Austral\SeoBundle\Services\RedirectionManagement
@@ -35,7 +36,7 @@ services:
 
   austral.seo.doctrine.listener:
     class:        Austral\SeoBundle\Listener\DoctrineListener
-    arguments:    ["@austral.seo.redirection.management"]
+    arguments:    ["@austral.seo.url_parameter.management", "@austral.seo.redirection.management"]
     tags:
       - { name: doctrine.event_subscriber, connection: default }
 

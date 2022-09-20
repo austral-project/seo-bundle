@@ -12,7 +12,6 @@ namespace Austral\SeoBundle\Listener;
 
 use Austral\AdminBundle\Event\ModuleEvent;
 use Austral\AdminBundle\Module\Module;
-use Austral\EntityFileBundle\File\Link\Generator;
 use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
 
@@ -24,25 +23,17 @@ use Austral\HttpBundle\Services\DomainsManagement;
 class ModuleListener
 {
   /**
-   * @var DomainsManagement|null
+   * @var DomainsManagement
    */
-  protected ?DomainsManagement $domains = null;
-
-  /**
-   * @var Generator|null
-   */
-  protected ?Generator $fileLinkGenerator;
+  protected DomainsManagement $domains;
 
   /**
    * @param ?DomainsManagement $domains
-   * @param Generator|null $fileLinkGenerator
    */
-  public function __construct(?DomainsManagement $domains = null, ?Generator $fileLinkGenerator = null)
+  public function __construct(?DomainsManagement $domains)
   {
     $this->domains = $domains;
-    $this->fileLinkGenerator = $fileLinkGenerator;
   }
-
 
   /**
    * @param ModuleEvent $moduleEvent
@@ -51,7 +42,7 @@ class ModuleListener
    */
   public function moduleAdd(ModuleEvent $moduleEvent)
   {
-    if($moduleEvent->getModule()->getModuleKey() === "seo" && $this->domains)
+    if($moduleEvent->getModule()->getModuleKey() === "seo")
     {
       if($this->domains->getEnabledDomainWithoutVirtual() > 1) {
 
@@ -60,22 +51,17 @@ class ModuleListener
         {
           $moduleEvent->getModules()->removeModule($subModule);
         }
-
         $moduleChange = false;
-        $domains = $this->domains->getDomainsWithoutVirtual();
         /** @var DomainInterface $domain */
-        foreach($domains as $domain)
+        foreach($this->domains->getDomainsWithoutVirtual() as $domain)
         {
-          if(!$domain->getIsVirtual())
-          {
-            $moduleChange = true;
-            $moduleEvent->getModules()->generateModuleByDomain(
-              $moduleEvent->getModule()->getModuleKey(),
-              $moduleEvent->getModule()->getModuleParameters(),
-              $domain,
-              $moduleEvent->getModule()
-            );
-          }
+          $moduleChange = true;
+          $moduleEvent->getModules()->generateModuleByDomain(
+            $moduleEvent->getModule()->getModuleKey(),
+            $moduleEvent->getModule()->getModuleParameters(),
+            $domain,
+            $moduleEvent->getModule()
+          );
         }
         if($moduleChange)
         {
