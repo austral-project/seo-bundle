@@ -12,10 +12,12 @@ namespace Austral\SeoBundle\Listener;
 
 use App\Entity\Austral\SeoBundle\UrlParameter;
 use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\ListBundle\Column\Action;
 use Austral\SeoBundle\Configuration\seoConfiguration;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Form\Field\PathField;
 use Austral\SeoBundle\Form\Type\UrlParameterFormType;
+use Austral\SeoBundle\Routing\AustralRouting;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Austral\FormBundle\Event\FormEvent;
 use Austral\FormBundle\Field as Field;
@@ -52,9 +54,9 @@ class FormListener
   protected DomainsManagement $domainsManagement;
 
   /**
-   * @var Router
+   * @var AustralRouting
    */
-  protected Router $router;
+  protected AustralRouting $australRouting;
 
   /**
    * @var seoConfiguration
@@ -73,7 +75,7 @@ class FormListener
    * @param UrlParameterFormType $urlParameterFormType
    * @param DomainsManagement $domainsManagement
    * @param seoConfiguration $seoConfiguration
-   * @param Router $router
+   * @param AustralRouting $australRouting
    * @param AuthorizationCheckerInterface $authorizationChecker
    *
    * @throws QueryException
@@ -82,7 +84,7 @@ class FormListener
     UrlParameterFormType $urlParameterFormType,
     DomainsManagement $domainsManagement,
     seoConfiguration $seoConfiguration,
-    Router $router,
+    AustralRouting $australRouting,
     AuthorizationCheckerInterface $authorizationChecker
   )
   {
@@ -90,8 +92,8 @@ class FormListener
     $this->urlParameterFormType = $urlParameterFormType;
     $this->domainsManagement = $domainsManagement->initialize();
     $this->seoConfiguration = $seoConfiguration;
+    $this->australRouting = $australRouting;
     $this->authorizationChecker = $authorizationChecker;
-    $this->router = $router;
   }
 
   /**
@@ -205,6 +207,24 @@ class FormListener
       elseif($type === FormEvent::EVENT_AUSTRAL_FORM_ADD_AUTO_FIELDS_AFTER)
       {
         $this->generateParametersFields($formEvent->getFormMapper(), $urlParameters);
+        try {
+          /** @var UrlParameterInterface $urlParameter */
+          foreach ($urlParameters as $urlParameter)
+          {
+            $formEvent->getFormMapper()->addAction(new Action("goTo_{$urlParameter->getId()}", "actions.goTo",
+              $this->australRouting->getUrl("austral_website_page", $urlParameter),
+              "austral-picto-corner-forward",
+              array(
+                "class"   =>  "button-picto",
+                "attr"    =>  array(
+                  "target"    =>  "_blank",
+                ),
+              )
+            ), 99
+            );
+          }
+        } catch(\Exception $e) {
+        }
       }
     }
 

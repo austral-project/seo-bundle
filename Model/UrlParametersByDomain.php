@@ -25,6 +25,7 @@ use Austral\SeoBundle\Services\UrlParameterMigrate;
 use Austral\ToolsBundle\AustralTools;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Routing\RequestContext;
 
 /**
  * Austral UrlParameters By Domain.

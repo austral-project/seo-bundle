@@ -10,13 +10,19 @@ services:
       - { name: kernel.event_subscriber }
 
 
+##### Routing #####
+  austral.seo.routing:
+    class:        Austral\SeoBundle\Routing\AustralRouting
+    arguments:
+      - '@router'
+      - "@austral.http.domains.management"
+      - "@austral.seo.url_parameter.management"
 
 ##### Twig Extension
   twig.extension.seo:
     class:        Austral\SeoBundle\TwigExtension\RoutingExtension
     arguments:
-      - '@router'
-      - "@austral.seo.url_parameter.management"
+      - '@austral.seo.routing'
     tags:
       - { name: twig.extension }
 
@@ -42,7 +48,7 @@ services:
     arguments: [         "@austral.entity.mapping", "@austral.entity_file.compression"]
 
 
-  ##### Listener #####
+##### Listener #####
 
   austral.seo.doctrine.listener:
     class:        Austral\SeoBundle\Listener\DoctrineListener
@@ -81,7 +87,6 @@ services:
   austral.seo.config:
     class:        Austral\SeoBundle\Configuration\SeoConfiguration
     arguments:    ["%austral_entity_seo%"]
-
 
 ##### Form Type #####
   austral.seo.url_parameter_form_type:

@@ -454,7 +454,7 @@ class UrlParameterManagement
    *
    * @return ?UrlParameterInterface
    */
-  public function getUrlParametersByObjectAndDomainId(EntityInterface $object, string $domainIdOrKey): ?UrlParameterInterface
+  public function getUrlParametersByObjectAndDomainId(EntityInterface $object, string $domainIdOrKey = "current"): ?UrlParameterInterface
   {
     /** @var UrlParametersByDomain $urlParametersByDomain */
     if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))

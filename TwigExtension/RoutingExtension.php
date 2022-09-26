@@ -12,6 +12,7 @@ namespace Austral\SeoBundle\TwigExtension;
 
 use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
+use Austral\SeoBundle\Routing\AustralRouting;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\Extension\AbstractExtension;
@@ -28,19 +29,13 @@ final class RoutingExtension extends AbstractExtension
 {
 
   /**
-   * @var UrlGeneratorInterface
+   * @var AustralRouting
    */
-  private UrlGeneratorInterface $generator;
+  private AustralRouting $australRouting;
 
-  /**
-   * @var UrlParameterManagement
-   */
-  private UrlParameterManagement $urlParameterManagement;
-
-  public function __construct(UrlGeneratorInterface $generator, UrlParameterManagement $urlParameterManagement)
+  public function __construct(AustralRouting $australRouting)
   {
-    $this->generator = $generator;
-    $this->urlParameterManagement = $urlParameterManagement;
+    $this->australRouting = $australRouting;
   }
 
   /**
@@ -65,7 +60,7 @@ final class RoutingExtension extends AbstractExtension
    */
   public function getPath(string $name, EntityInterface $object, array $parameters = [], ?string $domainId = "current", bool $relative = false): ?string
   {
-    return $this->generate($name, $object, $parameters, $domainId, $relative ? UrlGeneratorInterface::RELATIVE_PATH : UrlGeneratorInterface::ABSOLUTE_PATH);
+    return $this->australRouting->getPath($name, $object, $parameters, $domainId, $relative ? UrlGeneratorInterface::RELATIVE_PATH : UrlGeneratorInterface::ABSOLUTE_PATH);
   }
 
   /**
@@ -79,27 +74,7 @@ final class RoutingExtension extends AbstractExtension
    */
   public function getUrl(string $name, EntityInterface $object, array $parameters = [], ?string $domainId = "current", bool $schemeRelative = false): ?string
   {
-    return $this->generate($name, $object, $parameters, $domainId, $schemeRelative ? UrlGeneratorInterface::NETWORK_PATH : UrlGeneratorInterface::ABSOLUTE_URL);
-  }
-
-  /**
-   * @param string $name
-   * @param EntityInterface $object
-   * @param array $parameters
-   * @param string|null $domainId
-   * @param int $referenceType
-   *
-   * @return string
-   */
-  protected function generate(string $name, EntityInterface $object, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
-  {
-    /** @var UrlParameterInterface $urlParameter */
-    $urlParameter = $this->urlParameterManagement->getUrlParametersByObjectAndDomainId($object, $domainId);
-    if($urlParameter) {
-      $parameters["slug"] = $urlParameter->getPath();
-      return $this->generator->generate($name, $parameters, $referenceType);
-    }
-    return null;
+    return $this->australRouting->getUrl($name, $object, $parameters, $domainId, $schemeRelative ? UrlGeneratorInterface::NETWORK_PATH : UrlGeneratorInterface::ABSOLUTE_URL);
   }
 
   /**

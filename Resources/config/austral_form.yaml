@@ -13,7 +13,7 @@ services:
       - "@austral.seo.url_parameter_form_type"
       - "@austral.http.domains.management"
       - "@austral.seo.config"
-      - "@router"
+      - "@austral.seo.routing"
       - "@security.authorization_checker"
     tags:
       - { name: kernel.event_listener, event: "austral.event.form.add_auto_fields_after", method: formAddAutoFields }
