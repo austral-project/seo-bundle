@@ -205,6 +205,14 @@ class UrlParametersByDomain
   }
 
   /**
+   * @return array
+   */
+  public function getUrlParameters(): array
+  {
+    return $this->urlParameters;
+  }
+
+  /**
    * @param $values
    * @param array $urlsByDomainWithTree
    *
@@ -240,7 +248,7 @@ class UrlParametersByDomain
    *
    * @return EntityMapping|null
    */
-  protected function getEntityMappingByObjectClassname(string $classname): ?EntityMapping
+  public function getEntityMappingByObjectClassname(string $classname): ?EntityMapping
   {
     return $this->hasEntityMappingByObjectClassname($classname) ? $this->entitiesMapping[$classname] : null;
   }

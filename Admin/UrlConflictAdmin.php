@@ -13,10 +13,13 @@ namespace Austral\SeoBundle\Admin;
 use Austral\AdminBundle\Admin\Admin;
 use Austral\AdminBundle\Admin\Event\ListAdminEvent;
 use Austral\AdminBundle\Module\Modules;
+use Austral\EntityBundle\Mapping\EntityMapping;
+use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\UrlParameter;
 use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
 use Austral\SeoBundle\Form\Field\PathField;
+use Austral\SeoBundle\Model\UrlParametersByDomain;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Austral\FormBundle\Form\Type\FormTypeInterface;
 use Austral\FormBundle\Mapper\FormMapper;
@@ -66,22 +69,28 @@ class UrlConflictAdmin extends Admin
     /** @var Modules $modules */
     $modules = $this->container->get('austral.admin.modules');
 
-    foreach($urlParameterManagement->getUrlsConflictsByDomains() as $domainId => $urlsParametersByDomain)
+    /** @var UrlParametersByDomain $urlsParametersByDomain */
+    foreach($urlParameterManagement->getUrlParametersByDomains() as $urlsParametersByDomain)
     {
       /** @var UrlParameter $urlParameter */
-      foreach($urlsParametersByDomain as $urlConflict => $urlParametersByDomain)
+      foreach($urlsParametersByDomain->getUrlParameters() as $urlConflict => $urlParametersByDomain)
       {
         foreach($urlParametersByDomain as $urlParameter)
         {
-          $object = $urlParameter->getObject();
-          if($object instanceof FilterByDomainInterface)
+          $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass());
+          /** @var EntityMapping $entityMapping */
+          if($entityMapping = $urlParametersByDomain->getEntityMappingByObjectClassname($urlParameter->getObjectClass()))
           {
-            $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $object->getDomainId() ?? DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS);
+            /** @var DomainFilterMapping $domainFilter */
+            if($domainFilter = $entityMapping->getEntityClassMapping(DomainFilterMapping::class))
+            {
+              if($domainFilter->getAutoDomainId())
+              {
+                $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $urlParameter->getDomainId() ?? DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS);
+              }
+            }
           }
-          else
-          {
-            $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $domainId);
-          }
+
           $formMapper = new FormMapper($this->container->get('event_dispatcher'));
           $formMapper->setObject($urlParameter)
             ->setName("form_{$urlParameter->getId()}")
@@ -135,7 +144,7 @@ class UrlConflictAdmin extends Admin
             "mapper"        =>  $formMapper,
             "form"          =>  $form,
             "view"          =>  $form->createView(),
-            "groupElement"  =>  "{$domainId}.{$urlConflict}"
+            "groupElement"  =>  "{$urlsParametersByDomain->getDomain()->getId()}.{$urlConflict}"
           );
         }
       }
