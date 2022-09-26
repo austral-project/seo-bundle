@@ -6,7 +6,7 @@ Changelog
 * Updated bundles version to 3.1 for use the new Entities Interfaces
 * Added UrlParameter entity
 * Adding UrlParameterManagement service
-* Created UrlParameter if Object is ObjectUrl Annotation
+* Created UrlParameter if Object is UrlParameterObject Annotation
 * Created Redirection if UrlParameter Path changed
 * Multi Domain
 * Adding the deprecated class for migrate

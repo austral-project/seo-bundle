@@ -13,17 +13,20 @@ namespace Austral\SeoBundle\Entity;
 use Austral\EntityBundle\Entity\Entity;
 use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\EntityBundle\Entity\Interfaces\FileInterface;
-use Austral\EntityBundle\Entity\Interfaces\FilterByDomainInterface;
 use Austral\EntityBundle\Entity\Traits\EntityTimestampableTrait;
-use Austral\EntityFileBundle\Entity\Traits\EntityFileTrait;
-use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 
+use Austral\EntityFileBundle\Entity\Traits\EntityFileTrait;
 use Austral\EntityFileBundle\Annotation as AustralFile;
 
+use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\HttpBundle\Entity\Traits\FilterByDomainTrait;
-use Austral\ToolsBundle\AustralTools;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 
+use Austral\HttpBundle\Annotation\DomainFilter;
+
+use Austral\ToolsBundle\AustralTools;
+
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 
@@ -36,8 +39,9 @@ use Exception;
  * @abstract
  * @ORM\MappedSuperclass
  * @UniqueEntity(fields={"domainId", "language", "objectRelation", "actionRelation"}, errorPath="pathLast")
+ * @DomainFilter(forAllDomainEnabled=false, autoDomainId=true, autoAttachement=false)
  */
-abstract class UrlParameter extends Entity implements EntityInterface, UrlParameterInterface, FileInterface, FilterByDomainInterface
+abstract class UrlParameter extends Entity implements EntityInterface, UrlParameterInterface, FileInterface
 {
   use EntityFileTrait;
   use EntityTimestampableTrait;
@@ -119,6 +123,12 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
    * @var array
    */
   protected array $actionParameters = array();
+
+  /**
+   * @var string|null
+   * @ORM\Column(name="name", type="string", length=255, nullable=true )
+   */
+  protected ?string $name = null;
   
   /**
    * @var string|null
@@ -174,6 +184,21 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   protected ?string $keyLink = null;
 
   /**
+   * @var bool
+   */
+  protected bool $isVirtual = false;
+
+  /**
+   * @var bool
+   */
+  protected bool $isTreeView = true;
+
+  /**
+   * @var DomainInterface|null
+   */
+  protected ?DomainInterface $domain = null;
+
+  /**
    * Constructor
    * @throws Exception
    */
@@ -183,13 +208,16 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
     $this->id = Uuid::uuid4()->toString();
   }
 
+  /**
+   * @return string|null
+   */
   public function __toString()
   {
     if($this->object)
     {
       return $this->object->__toString();
     }
-    return $this->path;
+    return $this->name ?? $this->path;
   }
 
   /**
@@ -208,6 +236,25 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   public function setKeyLink(?string $keyLink): UrlParameter
   {
     $this->keyLink = $keyLink;
+    return $this;
+  }
+
+  /**
+   * @return DomainInterface|null
+   */
+  public function getDomain(): ?DomainInterface
+  {
+    return $this->domain;
+  }
+
+  /**
+   * @param DomainInterface|null $domain
+   *
+   * @return UrlParameter
+   */
+  public function setDomain(?DomainInterface $domain): UrlParameter
+  {
+    $this->domain = $domain;
     return $this;
   }
 
@@ -430,6 +477,25 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   }
 
   /**
+   * @return string|null
+   */
+  public function getName(): ?string
+  {
+    return $this->name;
+  }
+
+  /**
+   * @param string|null $name
+   *
+   * @return $this
+   */
+  public function setName(?string $name): UrlParameter
+  {
+    $this->name = $name;
+    return $this;
+  }
+
+  /**
    * @var EntityInterface|null
    */
   protected ?EntityInterface $object = null;
@@ -478,6 +544,17 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   public function getActionParameters(): array
   {
     return $this->actionParameters;
+  }
+
+  /**
+   * @param string $key
+   * @param null $default
+   *
+   * @return mixed
+   */
+  public function getActionParameterByKey(string $key, $default = null)
+  {
+    return AustralTools::getValueByKey($this->actionParameters, $key, $default);
   }
 
   /**
@@ -655,5 +732,42 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
     return $this;
   }
 
+  /**
+   * @return bool
+   */
+  public function getIsVirtual(): bool
+  {
+    return $this->isVirtual;
+  }
+
+  /**
+   * @param bool $isVirtual
+   *
+   * @return UrlParameter
+   */
+  public function setIsVirtual(bool $isVirtual): UrlParameter
+  {
+    $this->isVirtual = $isVirtual;
+    return $this;
+  }
+
+  /**
+   * @return bool
+   */
+  public function getIsTreeView(): bool
+  {
+    return $this->isTreeView;
+  }
+
+  /**
+   * @param bool $isTreeView
+   *
+   * @return UrlParameter
+   */
+  public function setIsTreeView(bool $isTreeView): UrlParameter
+  {
+    $this->isTreeView = $isTreeView;
+    return $this;
+  }
 
 }

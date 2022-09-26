@@ -15,27 +15,20 @@ use Doctrine\Common\Annotations\Annotation\NamedArgumentConstructor;
 /**
  * @Annotation
  * @NamedArgumentConstructor()
- * @Target({"CLASS"})
+ * @Target({"METHOD"})
  */
-final class ObjectUrl extends AustralEntityAnnotation
+final class UrlParameterAction extends AustralEntityAnnotation
 {
-
   /**
    * @var string|null
    */
-  public ?string $methodGenerateLastPath = null;
+  public ?string $name = null;
 
   /**
-   * @var string|null
+   * @param string|null $name
    */
-  public ?string $keyForObjectLink = null;
-
-  /**
-   * @param null $methodGenerateLastPath
-   */
-  public function __construct($methodGenerateLastPath = null, $keyForObjectLink = null) {
-    $this->methodGenerateLastPath = $methodGenerateLastPath;
-    $this->keyForObjectLink = $keyForObjectLink;
+  public function __construct(?string $name = null) {
+    $this->name = $name;
   }
 
 }

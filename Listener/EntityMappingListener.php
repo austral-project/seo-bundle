@@ -10,8 +10,8 @@
 
 namespace Austral\SeoBundle\Listener;
 
-use Austral\SeoBundle\Annotation\ObjectUrl;
-use Austral\SeoBundle\Annotation\ActionUrl;
+use Austral\SeoBundle\Annotation\UrlParameterObject;
+use Austral\SeoBundle\Annotation\UrlParameterAction;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
 
 use Austral\EntityBundle\EntityAnnotation\EntityAnnotations;
@@ -55,17 +55,21 @@ class EntityMappingListener
      */
     foreach($initialiseEntitesAnnotations->all() as $entityAnnotation)
     {
-      if(array_key_exists(ObjectUrl::class, $entityAnnotation->getClassAnnotations()) || array_key_exists(ActionUrl::class, $entityAnnotation->getClassAnnotations()))
+      if(array_key_exists(UrlParameterObject::class, $entityAnnotation->getClassAnnotations()) || array_key_exists(UrlParameterAction::class, $entityAnnotation->getClassAnnotations()))
       {
         if(!$entityMapping = $entityAnnotationEvent->getMapping()->getEntityMapping($entityAnnotation->getClassname()))
         {
           $entityMapping = new EntityMapping($entityAnnotation->getClassname(), $entityAnnotation->getSlugger());
         }
         $urlParameterMapping = new UrlParameterMapping();
-        if(array_key_exists(ObjectUrl::class, $entityAnnotation->getClassAnnotations()))
+        if(array_key_exists(UrlParameterObject::class, $entityAnnotation->getClassAnnotations()))
         {
-          $urlParameterMapping->setMethodGenerateLastPath($entityAnnotation->getClassAnnotations()[ObjectUrl::class]->methodGenerateLastPath);
-          if(!$keyForObjectLink = $entityAnnotation->getClassAnnotations()[ObjectUrl::class]->keyForObjectLink)
+          /** @var UrlParameterObject $urlParameterObjectAnnotation */
+          $urlParameterObjectAnnotation = $entityAnnotation->getClassAnnotations()[UrlParameterObject::class];
+
+          $urlParameterMapping->setMethodGenerateLastPath($urlParameterObjectAnnotation->methodGenerateLastPath);
+          $urlParameterMapping->setMethodUrlName($urlParameterObjectAnnotation->methodUrlName);
+          if(!$keyForObjectLink = $urlParameterObjectAnnotation->keyForObjectLink)
           {
             $keyForObjectLink = (new \ReflectionClass($entityMapping->entityClass))->getShortName();
           }

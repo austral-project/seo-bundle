@@ -10,13 +10,15 @@
  
 namespace Austral\SeoBundle\Entity;
 
-use Austral\EntityBundle\Entity\Interfaces\FilterByDomainInterface;
-use Austral\SeoBundle\Entity\Interfaces\RedirectionInterface;
-
 use Austral\EntityBundle\Entity\Entity;
 use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\EntityBundle\Entity\Traits\EntityTimestampableTrait;
+
+use Austral\SeoBundle\Entity\Interfaces\RedirectionInterface;
+
 use Austral\HttpBundle\Entity\Traits\FilterByDomainTrait;
+use Austral\HttpBundle\Annotation\DomainFilter;
+
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 
@@ -28,8 +30,9 @@ use Exception;
  * @author Matthieu Beurel <matthieu@austral.dev>
  * @abstract
  * @ORM\MappedSuperclass
+ * @DomainFilter(forAllDomainEnabled=false, autoDomainId=true)
  */
-abstract class Redirection extends Entity implements RedirectionInterface, EntityInterface, FilterByDomainInterface
+abstract class Redirection extends Entity implements RedirectionInterface, EntityInterface
 {
 
   use EntityTimestampableTrait;

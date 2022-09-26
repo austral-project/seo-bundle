@@ -9,6 +9,17 @@ services:
     tags:
       - { name: kernel.event_subscriber }
 
+
+
+##### Twig Extension
+  twig.extension.seo:
+    class:        Austral\SeoBundle\TwigExtension\RoutingExtension
+    arguments:
+      - '@router'
+      - "@austral.seo.url_parameter.management"
+    tags:
+      - { name: twig.extension }
+
 ##### Services #####
 
   austral.seo.url_parameter.management:
@@ -16,9 +27,8 @@ services:
     arguments:
       - "@austral.entity.mapping"
       - "@event_dispatcher"
-      - "@austral.entity_manager.url_parameter"
       - "@austral.entity_manager"
-      - "@austral.seo.config"
+      - "@austral.entity_manager.url_parameter"
       - "@austral.http.domains.management"
       - "@austral.seo.url_parameter.migrate"
       - "@austral.tools.debug"
@@ -49,7 +59,7 @@ services:
 
   austral.seo.entity_manager.listener:
     class:          Austral\SeoBundle\Listener\EntityManagerListener
-    arguments:    ["@austral.entity.mapping","@austral.seo.url_parameter.management"]
+    arguments:    ["@austral.seo.url_parameter.management"]
     tags:
       - { name: kernel.event_listener, event: "austral.entity_manager.duplicate", method: duplicateUrlParameter }
       - { name: kernel.event_listener, event: "austral.entity_manager.update", method: updateUrlParameter }

@@ -11,6 +11,7 @@
 namespace Austral\SeoBundle\Entity\Traits;
 
 use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\UrlParameter;
 use Austral\ToolsBundle\AustralTools;
 
@@ -31,9 +32,9 @@ trait UrlParameterTrait
    *
    * @return UrlParameter
    */
-  public function getUrlParameter(string $domainId = null): UrlParameter
+  public function getUrlParameter(string $domainId = DomainsManagement::DOMAIN_ID_MASTER): UrlParameter
   {
-    if($domainId && array_key_exists($domainId, $this->urlParameters))
+    if(array_key_exists($domainId, $this->urlParameters))
     {
       return $this->urlParameters[$domainId];
     }

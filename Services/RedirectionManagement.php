@@ -12,7 +12,7 @@ namespace Austral\SeoBundle\Services;
 
 
 use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\SeoBundle\Configuration\SeoConfiguration;
+use Austral\SeoBundle\Configuration\seoConfiguration;
 use Austral\SeoBundle\Entity\Interfaces\RedirectionInterface;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\EntityManager\RedirectionEntityManager;
@@ -32,9 +32,9 @@ class RedirectionManagement
   protected RedirectionEntityManager $redirectionManager;
 
   /**
-   * @var SeoConfiguration
+   * @var seoConfiguration
    */
-  protected SeoConfiguration $SeoConfiguration;
+  protected seoConfiguration $seoConfiguration;
 
   /**
    * @var array
@@ -44,13 +44,13 @@ class RedirectionManagement
   /**
    * RedirectionManagement constructor.
    *
-   * @param SeoConfiguration $SeoConfiguration
+   * @param seoConfiguration $seoConfiguration
    * @param RedirectionEntityManager $redirectionManager
    */
-  public function __construct(SeoConfiguration $SeoConfiguration, RedirectionEntityManager $redirectionManager)
+  public function __construct(seoConfiguration $seoConfiguration, RedirectionEntityManager $redirectionManager)
   {
     $this->redirectionManager = $redirectionManager;
-    $this->SeoConfiguration = $SeoConfiguration;
+    $this->seoConfiguration = $seoConfiguration;
   }
 
   /**
@@ -90,17 +90,17 @@ class RedirectionManagement
    */
   public function generateRedirectionAuto(UrlParameterInterface $urlParameter, string $newRefUrl = null, string $oldRefUrl = null): RedirectionManagement
   {
-    if($this->SeoConfiguration->get('redirection.auto'))
+    if($this->seoConfiguration->get('redirection.auto'))
     {
       /** @var RedirectionInterface|null $redirection */
-      if($redirectionUrlDestination = $this->redirectionManager->retreiveByUrlDestination($newRefUrl, $urlParameter->getDomainIdReel(), $urlParameter->getLanguage()))
+      if($redirectionUrlDestination = $this->redirectionManager->retreiveByUrlDestination($newRefUrl, $urlParameter->getDomainId(), $urlParameter->getLanguage()))
       {
         $redirectionUrlDestination->setIsActive(false);
         $this->redirectionsUpdate[$redirectionUrlDestination->getId()] = $redirectionUrlDestination;
       }
 
       /** @var RedirectionInterface|null $redirection */
-      $redirection = $this->redirectionManager->retreiveByUrlSource($newRefUrl, $urlParameter->getDomainIdReel(), $urlParameter->getLanguage());
+      $redirection = $this->redirectionManager->retreiveByUrlSource($newRefUrl, $urlParameter->getDomainId(), $urlParameter->getLanguage());
       if($redirection && ($redirection->getRelationEntityName() !== $urlParameter->getClassnameForMapping() || $redirection->getRelationEntityId() == $urlParameter->getId()))
       {
         $redirectionOther = $redirection;

@@ -11,23 +11,19 @@
 namespace Austral\SeoBundle\Services;
 
 use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\FilterByDomainInterface;
-use Austral\EntityBundle\Entity\Interfaces\TreePageInterface;
+use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\EntityBundle\EntityManager\EntityManagerORMInterface;
-use Austral\EntityBundle\Mapping\EntityClassMappingInterface;
 use Austral\EntityBundle\Mapping\EntityMapping;
 use Austral\EntityBundle\Mapping\Mapping;
-use Austral\SeoBundle\Configuration\SeoConfiguration;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
-use Austral\SeoBundle\Event\UrlParameterEvent;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
 use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
+use Austral\SeoBundle\Model\UrlParametersByDomain;
 use Austral\ToolsBundle\AustralTools;
 use Austral\ToolsBundle\Services\Debug;
-use Doctrine\ORM\Query\QueryException;
-use Ramsey\Uuid\Uuid;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -45,7 +41,7 @@ class UrlParameterManagement
   /**
    * @var DomainsManagement
    */
-  protected DomainsManagement $domains;
+  protected DomainsManagement $domainsManagement;
 
   /**
    * @var EntityManagerORMInterface
@@ -55,12 +51,7 @@ class UrlParameterManagement
   /**
    * @var UrlParameterEntityManager
    */
-  protected UrlParameterEntityManager $parameterEntityManager;
-
-  /**
-   * @var SeoConfiguration
-   */
-  protected SeoConfiguration $SeoConfiguration;
+  protected UrlParameterEntityManager $urlParameterEntityManager;
 
   /**
    * @var EventDispatcherInterface
@@ -78,6 +69,16 @@ class UrlParameterManagement
   protected Debug $debug;
 
   /**
+   * @var string
+   */
+  private string $debugContainer;
+
+  /**
+   * @var array
+   */
+  protected array $urlParametersByDomains = array();
+
+  /**
    * @var array
    */
   protected array $entitiesMapping = array();
@@ -90,60 +91,28 @@ class UrlParameterManagement
   /**
    * @var array
    */
-  protected array $objectUrlParameters = array();
+  protected array $domainIdByUrlParameterId = array();
 
   /**
-   * @var array
+   * @var UrlParametersByDomain|null
    */
-  protected array $urlsByDomains = array();
+  protected ?UrlParametersByDomain $urlParametersByDomainsForAll = null;
 
-  /**
-   * @var array
-   */
-  protected array $urlsByDomainsWithTree = array();
-
-  /**
-   * @var array
-   */
-  protected array $urlsByDomainAndObjectKey = array();
-
-  /**
-   * @var array
-   */
-  protected array $objectKeyLinkNames = array();
-
-  /**
-   * @var array
-   */
-  protected array $urlsConflictsByDomains = array();
-
-  /**
-   * @var array
-   */
-  protected array $nbUrlsStatusByDomains = array();
-
-  /**
-   * @var DomainInterface
-   */
-  private DomainInterface $domainForAll;
 
   /**
    * @param Mapping $mapping
    * @param EventDispatcherInterface $dispatcher
-   * @param UrlParameterEntityManager $parameterEntityManager
    * @param EntityManagerORMInterface $entityManager
-   * @param SeoConfiguration $SeoConfiguration
-   * @param DomainsManagement $domains
+   * @param UrlParameterEntityManager $urlParameterEntityManager
+   * @param DomainsManagement $domainsManagement
    * @param UrlParameterMigrate $urlParameterMigrate
    * @param Debug|null $debug
-   *
    */
   public function __construct(Mapping $mapping,
     EventDispatcherInterface $dispatcher,
-    UrlParameterEntityManager $parameterEntityManager,
     EntityManagerORMInterface $entityManager,
-    SeoConfiguration $SeoConfiguration,
-    DomainsManagement $domains,
+    UrlParameterEntityManager $urlParameterEntityManager,
+    DomainsManagement $domainsManagement,
     UrlParameterMigrate $urlParameterMigrate,
     Debug $debug
   )
@@ -151,12 +120,11 @@ class UrlParameterManagement
     $this->mapping = $mapping;
     $this->dispatcher = $dispatcher;
     $this->entityManager = $entityManager;
-    $this->parameterEntityManager = $parameterEntityManager;
-    $this->SeoConfiguration = $SeoConfiguration;
-    $this->domains = $domains;
-    $this->domainForAll = $domains->getDomainForAll();
+    $this->urlParameterEntityManager = $urlParameterEntityManager;
+    $this->domainsManagement = $domainsManagement;
     $this->urlParameterMigrate = $urlParameterMigrate;
     $this->debug = $debug;
+    $this->debugContainer = self::class;
   }
 
   /**
@@ -177,7 +145,12 @@ class UrlParameterManagement
    */
   public function initialize(bool $reload = false): UrlParameterManagement
   {
-    $this->debug->stopWatchStart("austral.url_parameter_management.initialize", "austral.seo.url_parameter_management");
+    $this->debug->stopWatchStart("austral.url_parameter_management.initialize", $this->debugContainer);
+
+    $entitiesMappingForAllDomain = array();
+    $urlPathWithLastPathForAllDomain = array();
+    $keysForObjectLinkForAllDomain = array();
+    $objectsForAllDomain = array();
     if((count($this->entitiesMapping) == 0) || $reload)
     {
       /** @var EntityMapping $entityMapping */
@@ -186,153 +159,344 @@ class UrlParameterManagement
         /** @var UrlParameterMapping $urlParameterMapping */
         if($urlParameterMapping = $entityMapping->getEntityClassMapping(UrlParameterMapping::class))
         {
+          $this->entitiesMapping[$entityMapping->entityClass] = $entityMapping;
           $this->keysForObjectLink[$urlParameterMapping->getKeyForObjectLink()] = $entityMapping->entityClass;
-          $repository = $this->entityManager->getRepository($entityMapping->entityClass);
-          $queryBuilder = $repository->createQueryBuilder("root");
-          $queryBuilder->indexBy("root", "root.id");
-          if($entityMapping->hasEntityClassMapping("Austral\EntityTranslateBundle\Mapping\EntityTranslateMapping"))
+
+          /** @var DomainFilterMapping $domainFilterMapping */
+          if($domainFilterMapping = $entityMapping->getEntityClassMapping(DomainFilterMapping::class))
           {
-            $queryBuilder->leftJoin("root.translates", "translates")->addSelect("translates");
-          }
-          $this->entitiesMapping[$entityMapping->entityClass] = array(
-            "mapping" => $entityMapping,
-            "objects" =>  $repository->selectByQueryBuilder($queryBuilder)
-          );
-        }
-      }
-    }
-    $this->debug->stopWatchLap("austral.url_parameter_management.initialize");
-
-    /** @var DomainInterface $domain */
-    foreach($this->domains->getDomainsWithoutVirtual() as $domain)
-    {
-      $this->urlsByDomains[$domain->getId()] = array(
-        "domain" =>  $domain,
-        "urls"    =>  array()
-      );
-      $this->urlsByDomainsWithTree[$domain->getId()] = array(
-        "domain" =>  $domain,
-        "urls"    =>  array()
-      );
-      $this->urlsConflictsByDomains[$domain->getId()] = array();
-      $this->urlsByDomainAndObjectKey[$domain->getId()] = array();
-      $this->nbUrlsStatusByDomains[$domain->getId()] = array(
-        UrlParameterInterface::STATUS_PUBLISHED =>  0,
-        UrlParameterInterface::STATUS_DRAFT =>  0,
-        UrlParameterInterface::STATUS_UNPUBLISHED =>  0,
-      );
-    }
-    $this->debug->stopWatchLap("austral.url_parameter_management.initialize");
-
-    if($this->domains->getEnabledDomainWithoutVirtual() === 0)
-    {
-      $this->urlsByDomains[$this->domains->getCurrentDomain()->getId()] = array(
-        "domain" =>  $this->domains->getCurrentDomain(),
-        "urls"    =>  array()
-      );
-      $this->urlsByDomainsWithTree[$this->domains->getCurrentDomain()->getId()] = array(
-        "domain" =>  $this->domains->getCurrentDomain(),
-        "urls"    =>  array()
-      );
-      $this->urlsConflictsByDomains[$this->domains->getCurrentDomain()->getId()] = array();
-      $this->urlsByDomainAndObjectKey[$this->domains->getCurrentDomain()->getId()] = array();
-      $this->nbUrlsStatusByDomains[$this->domains->getCurrentDomain()->getId()] = array(
-        UrlParameterInterface::STATUS_PUBLISHED =>  0,
-        UrlParameterInterface::STATUS_DRAFT =>  0,
-        UrlParameterInterface::STATUS_UNPUBLISHED =>  0,
-      );
-    }
-
-    $this->debug->stopWatchLap("austral.url_parameter_management.initialize");
-
-    $this->urlsByDomains[$this->domainForAll->getId()] = array(
-      "domain" =>  $this->domainForAll,
-      "urls"    =>  array()
-    );
-
-    $urlParameterEvent = new UrlParameterEvent($this);
-    $this->dispatcher->dispatch($urlParameterEvent, UrlParameterEvent::EVENT_START);
-
-    $this->objectUrlParameters = $this->entityManager
-      ->getRepository(UrlParameterInterface::class)
-      ->selectUrlsParameters($this->domains->getCurrentLanguage());
-
-    $this->debug->stopWatchLap("austral.url_parameter_management.initialize");
-
-    /** @var UrlParameterInterface $urlParameter */
-    foreach($this->objectUrlParameters as $urlParameter)
-    {
-      $this->hydrateUrl($urlParameter);
-    }
-
-    $this->dispatcher->dispatch($urlParameterEvent, UrlParameterEvent::EVENT_END);
-
-    $this->debug->stopWatchLap("austral.url_parameter_management.initialize");
-
-    if($domainMaster = $this->domains->getDomainMaster())
-    {
-      foreach($this->entitiesMapping as $valuesByEntity)
-      {
-        /** @var EntityInterface $object */
-        foreach($valuesByEntity["objects"] as $object)
-        {
-          if(!$object instanceof FilterByDomainInterface || !$object->getDomainId())
-          {
-            /** @var UrlParameterInterface $defaultUrlParameters */
-            if($defaultUrlParameters = $this->getUrlParameterByObject($object, $domainMaster->getId()))
+            if($domainFilterMapping->getForAllDomainEnabled() && $this->domainsManagement->getEnabledDomainWithoutVirtual())
             {
-              if(!array_key_exists($defaultUrlParameters->getPath(), $this->urlsByDomains[$this->domainForAll->getId()]["urls"]))
+              $entitiesMappingForAllDomain[$entityMapping->entityClass] = $entityMapping;
+              $keysForObjectLinkForAllDomain[$urlParameterMapping->getKeyForObjectLink()] = $entityMapping->entityClass;
+              if(!$domainFilterMapping->getAutoDomainId())
               {
-                $urlParameterForAllDomain = clone $defaultUrlParameters;
-                $urlParameterForAllDomain->setId(Uuid::uuid4()->toString());
-                /** @var UrlParameterMapping $urlParameterMapping */
-                $urlParameterMapping = $valuesByEntity["mapping"]->getEntityClassMapping(UrlParameterMapping::class);
-                $urlParameterForAllDomain->setKeyLink("{$urlParameterMapping->getKeyForObjectLink()}::{$object->getId()}");
-                $this->urlsByDomains[$this->domainForAll->getId()]["urls"][$urlParameterForAllDomain->getPath()] = $urlParameterForAllDomain;
-                $this->objectKeyLinkNames[$urlParameterForAllDomain->getKeyLink()] = $object->__toString();
+                $urlPathWithLastPathForAllDomain[] = $entityMapping->entityClass;
+              }
+              else
+              {
+                $objects = $this->entityManager->getRepository($entityMapping->entityClass)
+                  ->selectByClosure(function(QueryBuilder $queryBuilder) {
+                    $queryBuilder->where("root.domainId = :domainId")
+                      ->setParameter("domainId", DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS);
+                });
+                /** @var EntityInterface $object */
+                foreach($objects as $object)
+                {
+                  $objectsForAllDomain["{$object->getClassnameForMapping()}::{$object->getId()}"] = $object;
+                }
               }
             }
           }
         }
       }
-      ksort($this->urlsByDomains[$this->domainForAll->getId()]["urls"]);
-    }
-
-    $this->debug->stopWatchLap("austral.url_parameter_management.initialize");
-
-    /** @var DomainInterface $domain */
-    foreach($this->urlsByDomains as $keyDomain => $urlsByDomain)
-    {
-      ksort($this->urlsByDomains[$keyDomain]["urls"]);
-      $this->urlsByDomainsWithTree[$keyDomain] = array(
-        "domain"  =>  $urlsByDomain["domain"],
-        "urls"    =>  $this->transformTree(AustralTools::arrayByFlatten($urlsByDomain["urls"], "/"))
-      );
-      ksort($this->urlsByDomainsWithTree[$keyDomain]["urls"]);
     }
 
     $this->debug->stopWatchStop("austral.url_parameter_management.initialize");
+    $urlParametersEntityByDomain = array();
+
+    /** @var DomainInterface $domain */
+    foreach($this->domainsManagement->getDomainsWithoutVirtual() as $domain)
+    {
+      $urlParametersEntityByDomain[$domain->getId()] = array();
+    }
+    if($this->domainsManagement->getEnabledDomainWithoutVirtual())
+    {
+      $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS] = array();
+    }
+
+    // TODO Check for 1 domain with multi language
+    $urlsParametersAll = $this->entityManager->getRepository(UrlParameterInterface::class)->selectUrlsParameters();
+    /** @var UrlParameterInterface $urlParameter */
+    foreach ($urlsParametersAll as $urlParameter)
+    {
+      $urlParametersEntityByDomain[$urlParameter->getDomainId()][$urlParameter->getId()] = $urlParameter;
+
+      if($this->domainsManagement->getEnabledDomainWithoutVirtual())
+      {
+        if(array_key_exists($urlParameter->getObjectClass(), $entitiesMappingForAllDomain))
+        {
+          $path = null;
+          if(in_array($urlParameter->getObjectClass(), $urlPathWithLastPathForAllDomain))
+          {
+            $path = $urlParameter->getPathLast();
+          }
+          elseif(array_key_exists($urlParameter->getObjectRelation(), $objectsForAllDomain))
+          {
+            $path = $urlParameter->getPath();
+          }
+          if($path && !array_key_exists($urlParameter->getPath(), $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS]))
+          {
+            $urlParameterForAllDomain = $this->urlParameterEntityManager->create();
+            $urlParameterForAllDomain->setId("{$urlParameter->getObjectClassShort()}_{$urlParameter->getObjectId()}");
+            $urlParameterForAllDomain->setIsVirtual(true);
+            $urlParameterForAllDomain->setName($urlParameter->getName());
+            $urlParameterForAllDomain->setPath($path);
+            $urlParameterForAllDomain->setPathLast($path);
+            $urlParameterForAllDomain->setObjectRelation($urlParameter->getObjectRelation());
+            $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS][$urlParameterForAllDomain->getId()] = $urlParameterForAllDomain;
+          }
+        }
+      }
+    }
+
+    /** @var DomainInterface $domain */
+    foreach($this->domainsManagement->getDomainsWithoutVirtual() as $domain)
+    {
+      $this->debug->stopWatchStart("austral.url_parameter.build", $this->debugContainer);
+      if((!array_key_exists($domain->getId(), $this->urlParametersByDomains) && $domain->getId() !== DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS) || $reload)
+      {
+        $urlParametersByDomain = (new UrlParametersByDomain(
+          $this->dispatcher,
+          $domain,
+          $this->entityManager,
+          $this->urlParameterEntityManager,
+          $this->urlParameterMigrate,
+          $this->entitiesMapping,
+          $this->keysForObjectLink
+        ))->build($urlParametersEntityByDomain[$domain->getId()]);
+
+        $this->urlParametersByDomains[$domain->getId()] = $urlParametersByDomain;
+        $this->domainIdByUrlParameterId = array_merge($this->domainIdByUrlParameterId, $urlParametersByDomain->getDomainIdByUrlParameterId());
+      }
+      $this->debug->stopWatchStop("austral.url_parameter.build");
+    }
+
+    if($this->domainsManagement->getEnabledDomainWithoutVirtual())
+    {
+      $urlParametersByDomain = (new UrlParametersByDomain(
+        $this->dispatcher,
+        $this->domainsManagement->getDomainForAll(),
+        $this->entityManager,
+        $this->urlParameterEntityManager,
+        $this->urlParameterMigrate,
+        $entitiesMappingForAllDomain,
+        $keysForObjectLinkForAllDomain
+      ))->build($urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS]);
+      $this->urlParametersByDomainsForAll = $urlParametersByDomain;
+    }
     return $this;
   }
 
   /**
-   * @param $values
-   * @param array $urlsByDomainWithTree
-   *
-   * @return array|mixed
+   * @return array
    */
-  protected function transformTree($values, array $urlsByDomainWithTree = array())
+  public function getUrlParametersByDomainsWithTree(): array
   {
-    foreach($values as $key => $value)
+    $urlParametersByDomainsWithTree = array();
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach($this->urlParametersByDomains as $urlParametersByDomain)
     {
-      if(array_key_exists("element", $value))
+      $urlParametersByDomainsWithTree[] = array(
+        "domain"  =>  $urlParametersByDomain->getDomain(),
+        "urls"    =>  $urlParametersByDomain->getTreeUrlParameters()
+      );
+    }
+    if($this->domainsManagement->getEnabledDomainWithoutVirtual())
+    {
+      $urlParametersByDomainsWithTree[] = array(
+        "domain"  =>  $this->urlParametersByDomainsForAll->getDomain(),
+        "urls"    =>  $this->urlParametersByDomainsForAll->getTreeUrlParameters()
+      );
+    }
+    return $urlParametersByDomainsWithTree;
+  }
+
+  /**
+   * @param string $classname
+   *
+   * @return bool
+   */
+  public function hasEntityMappingByObjectClassname(string $classname): bool
+  {
+    return array_key_exists($classname, $this->entitiesMapping);
+  }
+
+  /**
+   * @param string $domainIdOrKey
+   *
+   * @return string|null
+   */
+  protected function getReelDomainId(string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?string
+  {
+    return $this->domainsManagement->getReelDomainId($domainIdOrKey);
+  }
+
+  /**
+   * @return array
+   */
+  public function getNameByKeyLinks(): array
+  {
+    $nameByKeysLinks = [];
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach($this->getUrlParametersByDomains() as $urlParametersByDomain)
+    {
+      $nameByKeysLinks = array_merge($nameByKeysLinks, $urlParametersByDomain->getNameByKeyLinks());
+    }
+    return $nameByKeysLinks;
+  }
+
+  /**
+   * @param string $classname
+   *
+   * @return string
+   */
+  protected function getObjectReelClassname(string $classname): string
+  {
+    return array_key_exists($classname, $this->keysForObjectLink) ? $this->keysForObjectLink[$classname] : $classname;
+  }
+
+  /**
+   * @param string $objectClassname
+   * @param string $objectId
+   *
+   * @return UrlParameterInterface|null
+   */
+  public function getUrlParameterByObjectClassnameAndId(string $objectClassname, string $objectId): ?UrlParameterInterface
+  {
+    $urlParameter = null;
+    $objectClassname = $this->getObjectReelClassname($objectClassname);
+    if($objectClassname === "UrlParameter" || AustralTools::usedClass($objectClassname, UrlParameterInterface::class))
+    {
+      $domainId = array_key_exists($objectId, $this->domainIdByUrlParameterId) ? $this->domainIdByUrlParameterId[$objectId] : null;
+      if($domainId && ($urlParametersByDomain = $this->getUrlParametersByDomain($domainId)))
       {
-        $urlsByDomainWithTree[$key]["urlParameter"] = $value["element"];
-        unset($value["element"]);
-        $urlsByDomainWithTree[$key]["children"] = $this->transformTree($value);
+        $urlParameter = $urlParametersByDomain->getUrlParameterById($objectId);
       }
     }
-    return $urlsByDomainWithTree;
+    else
+    {
+      if($urlParametersByDomain = $this->getUrlParametersByDomain($this->domainsManagement->getCurrentDomain()->getId()))
+      {
+        /** @var UrlParameterInterface $urlParameter */
+        $urlParameter = $urlParametersByDomain->getUrlParameterByObjectClassnameAndId($objectClassname, $objectId);
+      }
+    }
+    return $urlParameter;
+  }
+
+  /**
+   * @param EntityInterface $object
+   *
+   * @return array
+   * @throws \Exception
+   */
+  public function getUrlParametersByObject(EntityInterface $object): array
+  {
+    $urlParameters = [];
+    /** @var DomainFilterMapping $domainFilterMapping */
+    if($domainFilterMapping = $this->mapping->getEntityClassMapping($object->getClassnameForMapping(), DomainFilterMapping::class))
+    {
+      if($domainFilterMapping->getAutoDomainId())
+      {
+        if(!$domainFilterMapping->getForAllDomainEnabled() || $domainFilterMapping->getObjectValue($object, "domainId") !== DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS)
+        {
+          $urlParametersByDomain = $this->getUrlParametersByDomain($domainFilterMapping->getObjectValue($object, "domainId"));
+          if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
+          {
+            $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
+            $urlParameters[] = $urlParameter;
+          }
+        }
+        else
+        {
+          /** @var UrlParametersByDomain $urlParametersByDomain */
+          foreach($this->urlParametersByDomains as $urlParametersByDomain)
+          {
+            if(!$urlParametersByDomain->getIsVirtual())
+            {
+              $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
+              $urlParameters[] = $urlParameter;
+            }
+          }
+        }
+      }
+      else
+      {
+        foreach($domainFilterMapping->getObjectValue($object, "domainIds") as $domainId)
+        {
+          $urlParametersByDomain = $this->getUrlParametersByDomain($domainId);
+          if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
+          {
+            $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
+            $urlParameters[] = $urlParameter;
+          }
+        }
+        /** @var UrlParametersByDomain $urlParametersByDomain */
+        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomain)
+        {
+          if(!$urlParametersByDomain->getIsVirtual() && !$urlParametersByDomain->checkDomainIds($object))
+          {
+            if($urlParameter = $urlParametersByDomain->getUrlParameterByObject($object))
+            {
+              $urlParametersByDomain->deleteUrlParameter($urlParameter);
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      $urlParametersByDomain = $this->getUrlParametersByDomain();
+      if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
+      {
+        $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
+        $urlParameters[] = $urlParameter;
+      }
+    }
+    return $urlParameters;
+  }
+
+
+  /**
+   * @param EntityInterface $object
+   * @param string $domainIdOrKey
+   *
+   * @return ?UrlParameterInterface
+   */
+  public function getUrlParametersByObjectAndDomainId(EntityInterface $object, string $domainIdOrKey): ?UrlParameterInterface
+  {
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
+    {
+      return $urlParametersByDomain->getUrlParameterByObject($object);
+    }
+    return null;
+  }
+
+  /**
+   * @return array
+   */
+  public function getUrlParametersByDomains(): array
+  {
+    return $this->urlParametersByDomains;
+  }
+
+  /**
+   * @param string $domainIdOrKey
+   *
+   * @return UrlParametersByDomain|null
+   */
+  public function getUrlParametersByDomain(string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParametersByDomain
+  {
+    return AustralTools::getValueByKey($this->urlParametersByDomains, $this->getReelDomainId($domainIdOrKey), null);
+  }
+
+  /**
+   * @param string $domainIdOrKey
+   * @param string|null $slug
+   * @param bool $objectInit
+   *
+   * @return UrlParameterInterface|null
+   */
+  public function retreiveUrlParameterByDomainIdAndSlug(string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER, ?string $slug = null, bool $objectInit = false): ?UrlParameterInterface
+  {
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
+    {
+      return $urlParametersByDomain->getUrlParameterByPath($slug ?? "", $objectInit);
+    }
+    return null;
   }
 
   /**
@@ -343,21 +507,15 @@ class UrlParameterManagement
   public function getTotalUrlsByStatus(string $status): int
   {
     $count = 0;
-    foreach ($this->nbUrlsStatusByDomains as $nbUrlsStatusByDomain)
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
     {
-      $count += AustralTools::getValueByKey($nbUrlsStatusByDomain, $status, 0);
+      if(!$urlParametersByDomain->getIsVirtual())
+      {
+        $count += $urlParametersByDomain->getNbUrlParametersByStatus($status);
+      }
     }
     return $count;
-  }
-
-  /**
-   * @param string $domainId
-   *
-   * @return array
-   */
-  public function getNbUrlsStatusByDomain(string $domainId): array
-  {
-    return AustralTools::getValueByKey($this->nbUrlsStatusByDomains, $domainId, array());
   }
 
   /**
@@ -368,303 +526,38 @@ class UrlParameterManagement
    */
   public function getNbUrlsStatusByDomainAndStatus(string $domainId, string $status): ?int
   {
-    return AustralTools::getValueByKey($this->getNbUrlsStatusByDomain($domainId), $status, null);
-  }
-
-  /**
-   * @return void
-   * @throws \Exception
-   */
-  public function generateAllWithMapping()
-  {
-    foreach($this->entitiesMapping as $entityMapping)
+    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainId))
     {
-      foreach($entityMapping['objects'] as $object)
-      {
-        $this->generateUrlParameter($object);
-      }
+      return $urlParametersByDomain->getNbUrlParametersByStatus($status);
     }
-    $this->entityManager->flush();
-  }
-
-  /**
-   * @param string $objectClass
-   *
-   * @return EntityMapping|null
-   */
-  public function getEntityMappingByObjectClass(string $objectClass): ?EntityMapping
-  {
-    return array_key_exists($objectClass, $this->entitiesMapping) ? $this->entitiesMapping[$objectClass]["mapping"] : null;
-  }
-
-  /**
-   * @param string $objectClass
-   *
-   * @return array
-   */
-  public function getEntityByObjectClass(string $objectClass): array
-  {
-    return array_key_exists($objectClass, $this->entitiesMapping) ? $this->entitiesMapping[$objectClass] : array();
-  }
-
-  /**
-   * @param EntityInterface $object
-   *
-   * @return EntityMapping|null
-   */
-  public function getEntityMappingByObject(EntityInterface $object): ?EntityMapping
-  {
-    return  $this->getEntityMappingByObjectClass($object->getClassnameForMapping());
-  }
-
-  /**
-   * @param EntityInterface $object
-   *
-   * @return EntityClassMappingInterface|null
-   */
-  public function getObjectUrlParameterMapping(EntityInterface $object): ?EntityClassMappingInterface
-  {
-    if($entityMapping = $this->getEntityMappingByObject($object))
-    {
-      return $entityMapping->getEntityClassMapping(UrlParameterMapping::class);
-    }
-    return null;
-  }
-
-  /**
-   * @return array
-   */
-  public function getObjectKeyLinkNames(): array
-  {
-    return $this->objectKeyLinkNames;
-  }
-
-  /**
-   * @return array
-   */
-  public function getUrlParametersByDomains(): array
-  {
-    return $this->urlsByDomains;
-  }
-
-  /**
-   * @return array
-   */
-  public function getUrlsConflictsByDomains(): array
-  {
-    return $this->urlsConflictsByDomains;
-  }
-
-  /**
-   * @return array
-   */
-  public function getUrlParametersByDomainsWithTree(): array
-  {
-    return $this->urlsByDomainsWithTree;
-  }
-
-  /**
-   * @param string $domainId
-   *
-   * @return string|null
-   */
-  protected function getReelDomainId(string $domainId = "current"): ?string
-  {
-    return $domainId === "current" ? $this->domains->getFilterDomainId() : $domainId;
-  }
-
-  /**
-   * @param string $domainId
-   *
-   * @return array
-   */
-  public function getUrlParametersByDomain(string $domainId = "current"): array
-  {
-    $domainId = $this->getReelDomainId($domainId);
-    return array_key_exists($domainId, $this->urlsByDomains) ? $this->urlsByDomains[$domainId]["urls"] : array();
-  }
-
-  /**
-   * @param string $domainId
-   *
-   * @return array
-   */
-  public function getUrlParameterByObjectAndDomain(string $domainId = "current"): array
-  {
-    $domainId = $this->getReelDomainId($domainId);
-    return array_key_exists($domainId, $this->urlsByDomainAndObjectKey) ? $this->urlsByDomainAndObjectKey[$domainId] : array();
-  }
-
-  /**
-   * @param string|null $path
-   * @param string $domainId
-   *
-   * @return ?UrlParameterInterface
-   */
-  public function retrieveUrlParameters(?string $path = null, string $domainId = "current"): ?UrlParameterInterface
-  {
-    return AustralTools::getValueByKey($this->getUrlParametersByDomain($domainId), $path);
-  }
-
-  /**
-   * @param string $urlParameterId
-   *
-   * @return ?UrlParameterInterface
-   */
-  public function retrieveUrlParametersById(string $urlParameterId): ?UrlParameterInterface
-  {
-    return AustralTools::getValueByKey($this->objectUrlParameters, $urlParameterId, null);
-  }
-
-  /**
-   * @param EntityInterface $object
-   * @param string $domainId
-   *
-   * @return EntityInterface|null
-   */
-  public function getUrlParameterByObject(EntityInterface $object, string $domainId = "current"): ?EntityInterface
-  {
-    return $this->getUrlParameterByObjectClassnameAndId($object->getClassnameForMapping(), $object->getId(), $domainId);
-  }
-
-  /**
-   * @param EntityInterface $object
-   *
-   * @return array
-   */
-  public function getUrlParametersByObject(EntityInterface $object): array
-  {
-    $urlsParameters = array();
-    $classname = $object->getClassnameForMapping();
-    if(array_key_exists($classname, $this->keysForObjectLink))
-    {
-      $classname = $this->keysForObjectLink[$classname];
-    }
-    $objectKey = "{$classname}::{$object->getId()}";
-    foreach($this->urlsByDomainAndObjectKey as $urlsByObjectKey)
-    {
-      if(array_key_exists($objectKey, $urlsByObjectKey))
-      {
-        $urlsParameters[] = $urlsByObjectKey[$objectKey];
-      }
-    }
-    return $urlsParameters;
-  }
-
-  /**
-   * @param string $classname
-   * @param string|int $objectId
-   * @param string $domainId
-   *
-   * @return EntityInterface|null
-   */
-  public function getUrlParameterByObjectClassnameAndId(string $classname, $objectId, string $domainId = "current"): ?EntityInterface
-  {
-    if(array_key_exists($classname, $this->keysForObjectLink))
-    {
-      $classname = $this->keysForObjectLink[$classname];
-    }
-    return AustralTools::getValueByKey($this->getUrlParameterByObjectAndDomain($domainId), "{$classname}::{$objectId}");
+    return 0;
   }
 
   /**
    * @param UrlParameterInterface $urlParameter
    *
-   * @return EntityInterface|null
-   */
-  public function getObjectRelationByUrlParameter(UrlParameterInterface $urlParameter): ?EntityInterface
-  {
-    return $this->getObjectRelationByClassnameAndId($urlParameter->getObjectClass(), $urlParameter->getObjectId());
-  }
-
-  /**
-   * @param string $classname
-   * @param string|int $objectId
-   *
-   * @return EntityInterface|null
-   */
-  public function getObjectRelationByClassnameAndId(string $classname, $objectId): ?EntityInterface
-  {
-    if(array_key_exists($classname, $this->keysForObjectLink))
-    {
-      $classname = $this->keysForObjectLink[$classname];
-    }
-    $entityMapping = AustralTools::getValueByKey($this->entitiesMapping, $classname, array());
-    $entityMappingObject = AustralTools::getValueByKey($entityMapping, "objects", array());
-    return AustralTools::getValueByKey($entityMappingObject, $objectId);
-  }
-
-  /**
-   * @param EntityInterface $object
-   *
    * @return $this
    */
-  public function addObjectRelationByClassnameAndId(EntityInterface $object): UrlParameterManagement
+  public function remove(UrlParameterInterface $urlParameter): UrlParameterManagement
   {
-    if(array_key_exists($object->getClassnameForMapping(), $this->entitiesMapping))
+    if($urlParametersByDomain = $this->getUrlParametersByDomain($urlParameter->getDomainId()))
     {
-      $this->entitiesMapping[$object->getClassnameForMapping()]["objects"][$object->getId()] = $object;
+      $urlParametersByDomain->remove($urlParameter);
     }
     return $this;
   }
 
   /**
-   * @param UrlParameterInterface $urlParameter
+   * @param EntityInterface $object
    *
    * @return $this
    */
-  public function hydrateUrl(UrlParameterInterface $urlParameter): UrlParameterManagement
+  public function deleteUrlParameterByObject(EntityInterface $object): UrlParameterManagement
   {
-    $urlParameter->setDomain($this->domains->getDomainById($urlParameter->getDomainId()));
-    if($urlParameter->getObjectRelation())
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach($this->urlParametersByDomains as $urlParametersByDomain)
     {
-      if($object = $this->getObjectRelationByUrlParameter($urlParameter))
-      {
-        $this->urlsByDomainAndObjectKey[$urlParameter->getDomainId()]["{$object->getClassnameForMapping()}::{$object->getId()}"] = $urlParameter;
-        $urlParameter->setObject($object);
-        if(method_exists($object, "addUrlParameter"))
-        {
-          $object->addUrlParameter($urlParameter);
-        }
-        if($this->getEntityMappingByObject($object)) {
-          $urlParameter->setKeyLink("{$urlParameter->getClassname()}::{$urlParameter->getId()}");
-          $this->objectKeyLinkNames[$urlParameter->getKeyLink()] = $object->__toString();
-        }
-      }
-    }
-
-    /** @var UrlParameterInterface $urlCompare */
-    if($urlCompare = AustralTools::getValueByKey($this->urlsByDomains[$urlParameter->getDomainId()]["urls"], $urlParameter->getPath()))
-    {
-      if($urlCompare->getId() !== $urlParameter->getId())
-      {
-        if(!array_key_exists($urlParameter->getPath(), $this->urlsConflictsByDomains[$urlParameter->getDomainId()]))
-        {
-          $this->urlsConflictsByDomains[$urlParameter->getDomainId()][$urlParameter->getPath()] = array(
-            $urlCompare
-          );
-        }
-        $this->urlsConflictsByDomains[$urlParameter->getDomainId()][$urlParameter->getPath()][] = $urlParameter;
-      }
-    }
-    else
-    {
-      $this->urlsByDomains[$urlParameter->getDomainId()]["urls"][$urlParameter->getPath()] = $urlParameter;
-    }
-    $this->nbUrlsStatusByDomains[$urlParameter->getDomainId()][$urlParameter->getStatus()]++;
-    return $this;
-  }
-
-  /**
-   * @param UrlParameterInterface $urlParameter
-   *
-   * @return $this
-   */
-  public function removeUrlPath(UrlParameterInterface $urlParameter): UrlParameterManagement
-  {
-    if(array_key_exists($urlParameter->getPath(), $this->urlsByDomains[$urlParameter->getDomainId()]["urls"]))
-    {
-      unset($this->urlsByDomains[$urlParameter->getDomainId()]["urls"][$urlParameter->getPath()]);
+      $urlParametersByDomain->deleteUrlParameterByObject($object);
     }
     return $this;
   }
@@ -676,252 +569,139 @@ class UrlParameterManagement
    * @return $this
    * @throws \Exception
    */
-  public function duplicateUrlParameter(EntityInterface $objectSource, EntityInterface $object): UrlParameterManagement
+  public function duplicateUrlParameterByObject(EntityInterface $objectSource, EntityInterface $object): UrlParameterManagement
   {
-    $urlsParameters = $this->getUrlParametersByObject($objectSource);
-    $this->addObjectRelationByClassnameAndId($object);
-    /** @var UrlParameterInterface $urlParameter */
-    foreach($urlsParameters as $urlParameterSource)
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach($this->urlParametersByDomains as $urlParametersByDomain)
     {
-      /** @var UrlParameterInterface|EntityInterface $urlParameter */
-      $urlParameter = $this->entityManager->duplicate($urlParameterSource);
-      $urlParameter->setId(Uuid::uuid4()->toString());
-      $urlParameter->setLanguage($this->domains->getCurrentLanguage());
-
-      $uniqueKey = AustralTools::random(4);
-      $urlParameter->setPathLast("{$urlParameter->getPathLast()}-copy-{$uniqueKey}")
-        ->setObjectRelation("{$object->getClassnameForMapping()}::{$object->getId()}")
-        ->setObject($object)
-        ->setStatus(UrlParameterInterface::STATUS_UNPUBLISHED)
-        ->setKeyLink("{$urlParameter->getClassname()}::{$urlParameter->getId()}");
-
-      if($object instanceof TreePageInterface && $object->getTreePageParent())
-      {
-        $urlParameterParent = $this->getUrlParameterParent($object->getTreePageParent(), $urlParameter->getDomainId());
-        $urlParameter->setPath(($urlParameterParent->getPath() ? "{$urlParameterParent->getPath()}/" : null )."{$urlParameter->getPathLast()}");
-      }
-      else
-      {
-        $urlParameter->setPath("{$urlParameter->getPathLast()}");
-      }
-      $this->entityManager->update($urlParameter, false);
-      $this->hydrateUrl($urlParameter);
+      $urlParametersByDomain->duplicateUrlParameterByObject($objectSource, $object);
     }
     return $this;
   }
 
   /**
-   * @param EntityInterface|object $object
+   * @param UrlParameterInterface $urlParameter
+   *
+   * @return UrlParameterInterface|null
+   */
+  public function updateUrlParameter(UrlParameterInterface $urlParameter): ?UrlParameterInterface
+  {
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    if($urlParametersByDomain = $this->getUrlParametersByDomain($urlParameter->getDomainId()))
+    {
+      $urlParametersByDomain->updateUrlParameter($urlParameter);
+    }
+    return $urlParameter;
+  }
+
+  /**
+   * @return void
+   * @throws \Exception
+   */
+  public function generateAllUrlParameters()
+  {
+    $objectsByEntityClass = array();
+    /** @var EntityMapping $entityMapping */
+    foreach($this->entitiesMapping as $entityMapping)
+    {
+      if($entityMapping->getEntityClassMapping(UrlParameterMapping::class))
+      {
+        $this->entitiesMapping[$entityMapping->entityClass] = $entityMapping;
+
+        $repository = $this->entityManager->getRepository($entityMapping->entityClass);
+        $queryBuilder = $repository->createQueryBuilder("root");
+        $queryBuilder->indexBy("root", "root.id");
+        if($entityMapping->hasEntityClassMapping("Austral\EntityTranslateBundle\Mapping\EntityTranslateMapping"))
+        {
+          $queryBuilder->leftJoin("root.translates", "translates")->addSelect("translates");
+        }
+        $objectsByEntityClass[$entityMapping->entityClass] = $repository->selectByQueryBuilder($queryBuilder);
+      }
+    }
+
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
+    {
+      if(!$urlParametersByDomain->getIsVirtual())
+      {
+        $urlParametersByDomain->generateAllUrlParameters($objectsByEntityClass);
+      }
+    }
+    $this->entityManager->flush();
+  }
+
+  /**
+   * @param EntityInterface $object
    *
    * @return $this
    * @throws \Exception
    */
   public function generateUrlParameter(EntityInterface $object): UrlParameterManagement
   {
-    if($this->getObjectUrlParameterMapping($object))
+    /** @var DomainFilterMapping $domainFilterMapping */
+    if($domainFilterMapping = $this->mapping->getEntityClassMapping($object->getClassnameForMapping(), DomainFilterMapping::class))
     {
-      if($object instanceof FilterByDomainInterface && $object->getDomainId())
+      if($domainFilterMapping->getAutoDomainId())
       {
-        $this->generateUrlParameterWithParent($object, $object->getDomainId());
-      }
-      elseif($object instanceof FilterByDomainInterface && $this->domains->getEnabledDomainWithoutVirtual() > 0)
-      {
-        foreach ($this->domains->getDomainsWithoutVirtual() as $domain)
+        if(!$domainFilterMapping->getForAllDomainEnabled() || $domainFilterMapping->getObjectValue($object, "domainId") !== DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS)
         {
-          $this->generateUrlParameterWithParent($object, $domain->getId());
+          $urlParametersByDomain = $this->getUrlParametersByDomain($domainFilterMapping->getObjectValue($object, "domainId"));
+          if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
+          {
+            $urlParametersByDomain->generateUrlParameter($object);
+            $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+          }
         }
-      }
-      elseif($this->domains->getEnabledDomainWithoutVirtual() > 0)
-      {
-        $this->generateUrlParameterWithParent($object, $this->domains->getDomainMaster()->getId());
+        else
+        {
+          /** @var UrlParametersByDomain $urlParametersByDomain */
+          foreach($this->urlParametersByDomains as $urlParametersByDomain)
+          {
+            if(!$urlParametersByDomain->getIsVirtual())
+            {
+              $urlParametersByDomain->generateUrlParameter($object);
+              $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+            }
+          }
+        }
       }
       else
       {
-        $this->generateUrlParameterWithParent($object);
-      }
-      $this->generateChildrenUrlParameters($object);
-    }
-    return $this;
-  }
-
-  /**
-   * @param EntityInterface|object $object
-   *
-   * @return $this
-   */
-  public function deleteUrlParameter(EntityInterface $object): UrlParameterManagement
-  {
-    $urlsParameters = $this->getUrlParametersByObject($object);
-
-    /** @var UrlParameterInterface|EntityInterface $urlParameter */
-    foreach($urlsParameters as $urlParameter)
-    {
-      $this->entityManager->delete($urlParameter, false);
-    }
-    return $this;
-  }
-
-  /**
-   * @param EntityInterface $object
-   * @param string $domainId
-   *
-   * @return UrlParameterInterface
-   */
-  public function getOrCreateUrlParameterByObject(EntityInterface $object, string $domainId = "current"): UrlParameterInterface
-  {
-    if(!$urlParameter = $this->getUrlParameterByObject($object, $domainId))
-    {
-      $urlParameter = $this->createUrlParameter($object, $domainId);
-    }
-    $urlParameter->setObject($object);
-    return $urlParameter;
-  }
-
-  /**
-   * @param EntityInterface $object
-   * @param string $domainId
-   *
-   * @return UrlParameterInterface
-   */
-  protected function createUrlParameter(EntityInterface $object, string $domainId = "current"): UrlParameterInterface
-  {
-    $urlParameter = $this->parameterEntityManager->create();
-    $urlParameter->setObjectRelation("{$object->getClassnameForMapping()}::{$object->getId()}");
-    $urlParameter->setDomainId($this->getReelDomainId($domainId));
-    $urlParameter->setDomain($this->domains->getDomainById($urlParameter->getDomainId()));
-    return $urlParameter;
-  }
-
-  /**
-   * @param UrlParameterInterface $urlParameter
-   *
-   * @return UrlParameterManagement
-   */
-  public function generatePathWithUrlParameter(UrlParameterInterface $urlParameter): UrlParameterManagement
-  {
-    if(($object = $urlParameter->getObject()))
-    {
-      $method = "__toString";
-      if($entityMapping = $this->getEntityMappingByObject($object))
-      {
-        /** @var UrlParameterMapping $urlParameterMapping */
-        $urlParameterMapping = $entityMapping->getEntityClassMapping(UrlParameterMapping::class);
-        if(method_exists($object, $urlParameterMapping->getMethodGenerateLastPath()))
+        foreach($domainFilterMapping->getObjectValue($object, "domainIds") as $domainId)
         {
-          $method = $urlParameterMapping->getMethodGenerateLastPath();
-        }
-
-        if(!$urlParameter->getKeyLink())
-        {
-          $urlParameter->setKeyLink("{$urlParameterMapping->getKeyForObjectLink()}::{$object->getId()}");
+          $urlParametersByDomain = $this->getUrlParametersByDomain($domainId);
+          if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
+          {
+            $urlParametersByDomain->generateUrlParameter($object);
+            $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+          }
         }
       }
-      if(!$urlParameter->getPathLast())
-      {
-        $this->urlParameterMigrate->recoveryRefUrlPathValue($urlParameter, $object);
-        if(!$urlParameter->getPathLast())
-        {
-          $urlParameter->setPathLast($object->$method());
-        }
-      }
-    }
-    return $this;
-  }
-
-  /**
-   * @param EntityInterface $object
-   * @param string $domainId
-   *
-   * @return UrlParameterInterface
-   * @throws \Exception
-   */
-  protected function generateUrlParameterWithParent(EntityInterface $object, string $domainId = "current"): UrlParameterInterface
-  {
-    $urlParameter = $this->getOrCreateUrlParameterByObject($object, $domainId);
-    $this->generatePathWithUrlParameter($urlParameter);
-
-    $urlParameter->setLanguage($this->domains->getCurrentLanguage());
-    if($object instanceof TreePageInterface && $object->getTreePageParent())
-    {
-      $urlParameterParent = $this->getUrlParameterParent($object->getTreePageParent(), $domainId);
-      $urlParameter->setPath(($urlParameterParent->getPath() ? "{$urlParameterParent->getPath()}/" : null )."{$urlParameter->getPathLast()}");
     }
     else
     {
-      $urlParameter->setPath("{$urlParameter->getPathLast()}");
-    }
-
-    $this->urlParameterMigrate->recoverySeoValues($urlParameter, $object);
-    $this->urlParameterMigrate->recoveryRobotValues($urlParameter, $object);
-    $this->urlParameterMigrate->recoverySocialValues($urlParameter, $object);
-
-    $this->entityManager->update($urlParameter, false);
-    $this->hydrateUrl($urlParameter);
-    return $urlParameter;
-  }
-
-  /**
-   * @param UrlParameterInterface $urlParameter
-   *
-   * @return UrlParameterInterface|null
-   */
-  public function updateUrlParameterWithParent(UrlParameterInterface $urlParameter): ?UrlParameterInterface
-  {
-    /** @var EntityInterface $object */
-    if($object = $urlParameter->getObject())
-    {
-      if($object instanceof TreePageInterface && $object->getTreePageParent())
+      $urlParametersByDomain = $this->getUrlParametersByDomain();
+      if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
       {
-        $urlParameterParent = $this->getUrlParameterByObject($object->getTreePageParent(), $urlParameter->getDomainId());
-        $urlParameter->setPath(($urlParameterParent && $urlParameterParent->getPath() ? "{$urlParameterParent->getPath()}/" : null )."{$urlParameter->getPathLast()}");
-      }
-      else
-      {
-        $urlParameter->setPath("{$urlParameter->getPathLast()}");
-      }
-    }
-    return $urlParameter;
-  }
-
-  /**
-   * @param TreePageInterface|EntityInterface $treePageParent
-   * @param string $domainId
-   *
-   * @return UrlParameterInterface|null
-   * @throws \Exception
-   */
-  protected function getUrlParameterParent(TreePageInterface $treePageParent, string $domainId = "current"): ?UrlParameterInterface
-  {
-    if(!$urlParameter = $this->getUrlParameterByObject($treePageParent, $domainId))
-    {
-      $urlParameter = $this->generateUrlParameterWithParent($treePageParent, $domainId);
-    }
-    return $urlParameter;
-  }
-
-  /**
-   * @param EntityInterface $object
-   *
-   * @return UrlParameterManagement
-   * @throws \Exception
-   */
-  protected function generateChildrenUrlParameters(EntityInterface $object): UrlParameterManagement
-  {
-    if(method_exists($object, "getChildren"))
-    {
-      foreach($object->getChildren() as $child)
-      {
-        $this->generateUrlParameter($child);
-      }
-    }
-    if(method_exists($object, "getChildrenEntities"))
-    {
-      foreach($object->getChildrenEntities() as $child)
-      {
-        $this->generateUrlParameter($child);
+        $urlParametersByDomain->generateUrlParameter($object);
+        $this->recoveryValuesAustral30($urlParametersByDomain, $object);
       }
     }
     return $this;
   }
+
+  /**
+   * @return $this
+   * @throws \Exception
+   */
+  protected function recoveryValuesAustral30(UrlParametersByDomain $urlParametersByDomain, EntityInterface $object): UrlParameterManagement
+  {
+    $urlParameter = $urlParametersByDomain->getUrlParameterByObject($object);
+    $this->urlParameterMigrate->recoverySeoValues($urlParameter, $object);
+    $this->urlParameterMigrate->recoveryRobotValues($urlParameter, $object);
+    $this->urlParameterMigrate->recoverySocialValues($urlParameter, $object);
+    return $this;
+  }
+
 
 }

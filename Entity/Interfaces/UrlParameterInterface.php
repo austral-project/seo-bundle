@@ -56,6 +56,18 @@ interface UrlParameterInterface
   /**
    * @return string|null
    */
+  public function getKeyLink(): ?string;
+
+  /**
+   * @param string|null $keyLink
+   *
+   * @return UrlParameterInterface
+   */
+  public function setKeyLink(?string $keyLink): UrlParameterInterface;
+
+  /**
+   * @return string|null
+   */
   public function getSeoTitle(): ?string;
 
   /**
@@ -138,9 +150,26 @@ interface UrlParameterInterface
   public function setObjectRelation(?string $objectRelation): UrlParameterInterface;
 
   /**
+   * @return string|null
+   */
+  public function getName(): ?string;
+
+  /**
+   * @param string|null $name
+   *
+   * @return $this
+   */
+  public function setName(?string $name): UrlParameterInterface;
+
+  /**
    * @return string
    */
   public function getObjectClass(): string;
+
+  /**
+   * @return string|null
+   */
+  public function getObjectClassShort(): ?string;
 
   /**
    * @return string|int
@@ -155,11 +184,6 @@ interface UrlParameterInterface
   /**
    * @return string|null
    */
-  public function getDomainIdReel(): ?string;
-
-  /**
-   * @return string|null
-   */
   public function getActionRelation(): ?string;
 
   /**
@@ -168,6 +192,33 @@ interface UrlParameterInterface
    * @return UrlParameterInterface
    */
   public function setActionRelation(?string $actionRelation): UrlParameterInterface;
+
+  /**
+   * @return array
+   */
+  public function getActionParameters(): array;
+  /**
+   * @param string $key
+   * @param null $default
+   *
+   * @return mixed
+   */
+  public function getActionParameterByKey(string $key, $default = null);
+
+  /**
+   * @param string $key
+   * @param $value
+   *
+   * @return UrlParameterInterface
+   */
+  public function addActionParameters(string $key, $value): UrlParameterInterface;
+
+  /**
+   * @param array $actionParameters
+   *
+   * @return UrlParameterInterface
+   */
+  public function setActionParameters(array $actionParameters): UrlParameterInterface;
 
   /**
    * @return EntityInterface|null
@@ -276,6 +327,30 @@ interface UrlParameterInterface
    * @return UrlParameterInterface
    */
   public function setInSitemap(bool $inSitemap): UrlParameterInterface;
+
+  /**
+   * @return bool
+   */
+  public function getIsVirtual(): bool;
+
+  /**
+   * @param bool $isVirtual
+   *
+   * @return UrlParameterInterface
+   */
+  public function setIsVirtual(bool $isVirtual): UrlParameterInterface;
+
+  /**
+   * @return bool
+   */
+  public function getIsTreeView(): bool;
+
+  /**
+   * @param bool $isTreeView
+   *
+   * @return UrlParameterInterface
+   */
+  public function setIsTreeView(bool $isTreeView): UrlParameterInterface;
 
 }
 

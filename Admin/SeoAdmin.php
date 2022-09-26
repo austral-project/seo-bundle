@@ -13,7 +13,8 @@ namespace Austral\SeoBundle\Admin;
 use Austral\AdminBundle\Admin\Admin;
 use Austral\AdminBundle\Admin\Event\ListAdminEvent;
 use Austral\AdminBundle\Module\Modules;
-use Austral\EntityBundle\Entity\Interfaces\FilterByDomainInterface;
+use Austral\HttpBundle\Entity\Interfaces\FilterByDomainInterface;
+use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Configuration\SeoConfiguration;
 use Austral\SeoBundle\Entity\UrlParameter;
 use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
@@ -103,44 +104,46 @@ class SeoAdmin extends Admin
     /** @var UrlParameter $urlParameter */
     foreach($urlParametersByDomain as $urlParameter)
     {
-      $object = $urlParameter->getObject();
-      if($object instanceof FilterByDomainInterface && $domainId !== "current")
+      if(!$urlParameter->getIsVirtual())
       {
-        $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $object->getDomainId() ?? "for-all-domains");
-      }
-      else
-      {
-        $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass());
-      }
+        $object = $urlParameter->getObject();
+        if($object instanceof FilterByDomainInterface && $domainId !== "current")
+        {
+          $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $object->getDomainId() ?? DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS);
+        }
+        else
+        {
+          $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass());
+        }
 
-      $formMapper = new FormMapper($this->container->get('event_dispatcher'));
-      $formMapper->setObject($urlParameter)
-        ->setName("form_{$urlParameter->getId()}")
-        ->setFormTypeAction("edit")
-        ->setTranslateDomain("austral");
-      if($moduleObject)
-      {
-        $formMapper->setModule($moduleObject);
-      }
+        $formMapper = new FormMapper($this->container->get('event_dispatcher'));
+        $formMapper->setObject($urlParameter)
+          ->setName("form_{$urlParameter->getId()}")
+          ->setFormTypeAction("edit")
+          ->setTranslateDomain("austral");
+        if($moduleObject)
+        {
+          $formMapper->setModule($moduleObject);
+        }
 
-      $formMapperMaster->addSubFormMapper("form_{$urlParameter->getId()}", $formMapper);
+        $formMapperMaster->addSubFormMapper("form_{$urlParameter->getId()}", $formMapper);
 
-      /** @var FormTypeInterface $formType */
-      $formType = clone $this->container->get('austral.form.type.master')
-        ->setClass(ClassUtils::getClass($urlParameter))
-        ->setFormMapper($formMapperMaster);
+        /** @var FormTypeInterface $formType */
+        $formType = clone $this->container->get('austral.form.type.master')
+          ->setClass(ClassUtils::getClass($urlParameter))
+          ->setFormMapper($formMapperMaster);
 
 
-      if($type === "seo-all")
-      {
-        $formMapper->add(Field\TemplateField::create("googleVisualisation",
-          "@AustralSeo/Form/_Components/Field/google-visualisation.html.twig",
+        if($type === "seo-all")
+        {
+          $formMapper->add(Field\TemplateField::create("googleVisualisation",
+            "@AustralSeo/Form/_Components/Field/google-visualisation.html.twig",
           )
-        );
-      }
-      if($type === "seo-title" || $type === "seo-all")
-      {
-        $formMapper->add(Field\TextField::create("seoTitle", array(
+          );
+        }
+        if($type === "seo-title" || $type === "seo-all")
+        {
+          $formMapper->add(Field\TextField::create("seoTitle", array(
               "entitled"  =>  "fields.seoTitle.entitled",
               "attr"  => array(
                 'data-characters-max'  =>  $SeoConfiguration->get("nb_characters.ref_title"),
@@ -148,58 +151,59 @@ class SeoAdmin extends Admin
               )
             )
           )
-        )
-        ->add(Field\TextareaField::create("seoDescription", Field\TextareaField::SIZE_AUTO, array(
-              "entitled"  =>  "fields.seoDescription.entitled",
-              "attr"  => array(
-                'data-characters-max'  =>  $SeoConfiguration->get("nb_characters.ref_description"),
-                "autocomplete"  =>  "off"
-              )
-            )
           )
-        );
-      }
-      if($type === "seo-url" || $type === "seo-all")
-      {
-        $formMapper->add(new PathField("pathLast", array(
-              "entitled"  =>  "fields.pathLast.entitled",
-              "attr"      =>  array(
-                "autocomplete"  =>  "off"
-              ),
-              "template"  =>  array(
-                "vars"  =>  array(
-                  "urlParameter"  =>  $urlParameter
+            ->add(Field\TextareaField::create("seoDescription", Field\TextareaField::SIZE_AUTO, array(
+                "entitled"  =>  "fields.seoDescription.entitled",
+                "attr"  => array(
+                  'data-characters-max'  =>  $SeoConfiguration->get("nb_characters.ref_description"),
+                  "autocomplete"  =>  "off"
                 )
               )
             )
-          )
-        );
-      }
+            );
+        }
+        if($type === "seo-url" || $type === "seo-all")
+        {
+          $formMapper->add(new PathField("pathLast", array(
+                "entitled"  =>  "fields.pathLast.entitled",
+                "attr"      =>  array(
+                  "autocomplete"  =>  "off"
+                ),
+                "template"  =>  array(
+                  "vars"  =>  array(
+                    "urlParameter"  =>  $urlParameter
+                  )
+                )
+              )
+            )
+          );
+        }
 
-      $form = $this->container->get('form.factory')->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
-      if($request->getMethod() == 'POST')
-      {
-        $form->handleRequest($request);
-        if($form->isSubmitted()) {
+        $form = $this->container->get('form.factory')->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
+        if($request->getMethod() == 'POST')
+        {
+          $form->handleRequest($request);
+          if($form->isSubmitted()) {
 
-          $formMapper->setObject($form->getData());
-          if($form->isValid() && $this->module->getAdmin()->formIsValidate())
-          {
-            $urlParameterEntityManager->update($formMapper->getObject(), false);
-          }
-          else
-          {
-            $formsIsValide = false;
-            $formMapper->setFormStatus("error");
+            $formMapper->setObject($form->getData());
+            if($form->isValid() && $this->module->getAdmin()->formIsValidate())
+            {
+              $urlParameterEntityManager->update($formMapper->getObject(), false);
+            }
+            else
+            {
+              $formsIsValide = false;
+              $formMapper->setFormStatus("error");
+            }
           }
         }
+        $forms[] = array(
+          "mapper"        =>  $formMapper,
+          "form"          =>  $form,
+          "view"          =>  $form->createView(),
+          "groupElement"  =>  null
+        );
       }
-      $forms[] = array(
-        "mapper"        =>  $formMapper,
-        "form"          =>  $form,
-        "view"          =>  $form->createView(),
-        "groupElement"  =>  null
-      );
     }
 
     $formSend = false;

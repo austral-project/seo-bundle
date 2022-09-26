@@ -12,7 +12,7 @@ namespace Austral\SeoBundle\Listener;
 
 use App\Entity\Austral\SeoBundle\UrlParameter;
 use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\SeoBundle\Configuration\SeoConfiguration;
+use Austral\SeoBundle\Configuration\seoConfiguration;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Form\Field\PathField;
 use Austral\SeoBundle\Form\Type\UrlParameterFormType;
@@ -49,7 +49,7 @@ class FormListener
   /**
    * @var DomainsManagement
    */
-  protected DomainsManagement $domains;
+  protected DomainsManagement $domainsManagement;
 
   /**
    * @var Router
@@ -57,9 +57,9 @@ class FormListener
   protected Router $router;
 
   /**
-   * @var SeoConfiguration
+   * @var seoConfiguration
    */
-  protected SeoConfiguration $SeoConfiguration;
+  protected seoConfiguration $seoConfiguration;
 
   /**
    * @var AuthorizationCheckerInterface
@@ -71,8 +71,8 @@ class FormListener
    *
    * @param UrlParameterManagement $urlParameterManagement
    * @param UrlParameterFormType $urlParameterFormType
-   * @param DomainsManagement $domains
-   * @param SeoConfiguration $SeoConfiguration
+   * @param DomainsManagement $domainsManagement
+   * @param seoConfiguration $seoConfiguration
    * @param Router $router
    * @param AuthorizationCheckerInterface $authorizationChecker
    *
@@ -80,16 +80,16 @@ class FormListener
    */
   public function __construct(UrlParameterManagement $urlParameterManagement,
     UrlParameterFormType $urlParameterFormType,
-    DomainsManagement $domains,
-    SeoConfiguration $SeoConfiguration,
+    DomainsManagement $domainsManagement,
+    seoConfiguration $seoConfiguration,
     Router $router,
     AuthorizationCheckerInterface $authorizationChecker
   )
   {
     $this->urlParameterManagement = $urlParameterManagement;
     $this->urlParameterFormType = $urlParameterFormType;
-    $this->domains = $domains->initialize();
-    $this->SeoConfiguration = $SeoConfiguration;
+    $this->domainsManagement = $domainsManagement->initialize();
+    $this->seoConfiguration = $seoConfiguration;
     $this->authorizationChecker = $authorizationChecker;
     $this->router = $router;
   }
@@ -104,27 +104,10 @@ class FormListener
   {
     /** @var EntityInterface $object */
     $object = $formEvent->getFormMapper()->getObject();
-    if($this->urlParameterManagement->getEntityMappingByObject($object))
+    if($this->urlParameterManagement->hasEntityMappingByObjectClassname($object->getClassnameForMapping()))
     {
-      $urlParameters = array();
-      if($this->domains->getFilterDomainId())
-      {
-        $urlParameters[] = $this->urlParameterManagement->getOrCreateUrlParameterByObject($object, $this->domains->getFilterDomainId());
-      }
-      else
-      {
-        if(count($this->domains->getDomainsWithoutVirtual()) > 1)
-        {
-          foreach($this->domains->getDomainsWithoutVirtual() as $domain)
-          {
-            $urlParameters[] = $this->urlParameterManagement->getOrCreateUrlParameterByObject($object, $domain->getId());
-          }
-        }
-        else
-        {
-          $urlParameters[] = $this->urlParameterManagement->getOrCreateUrlParameterByObject($object, $this->domains->getCurrentDomain()->getId());
-        }
-      }
+      $this->domainsManagement->objectDomainAttachement($object);
+      $urlParameters = $this->urlParameterManagement->getUrlParametersByObject($object);
       $statusMaster = null;
       /** @var UrlParameter $urlParameter */
       foreach ($urlParameters as $urlParameter)
@@ -244,11 +227,12 @@ class FormListener
     $formMapper->addSubFormMapper("urlParameters", $urlParameterFormMapper);
     $this->urlParameterFormType->setFormMapper($urlParameterFormMapper);
 
-
+    $domainsManagement = $this->domainsManagement;
     $fieldsetEntitled = $isMultiDomain ? "fieldset.urlParametersConfigurationByDomain" : "fieldset.urlParametersConfiguration";
     $urlParameterFieldset = $urlParameterFormMapper->addFieldset("fieldset.seoParameters", $fieldsetEntitled)
-      ->setClosureTranslateArgument(function(Fieldset $fieldset, $object) {
-        $fieldset->addTranslateArguments("%domainName%", $object->getDomain() ? $object->getDomain()->getName() : "");
+      ->setClosureTranslateArgument(function(Fieldset $fieldset, $object) use($domainsManagement) {
+        $fieldset->addTranslateArguments("%domainName%",
+          $domainsManagement->getDomainById($object->getDomainId()) ? $domainsManagement->getDomainById($object->getDomainId())->getName() : "");
       })
       ->setAttr(array("class" =>  "fieldset-content-parent"))
       ->setCollapse($isMultiDomain);
@@ -311,7 +295,7 @@ class FormListener
       ->add(Field\TextField::create("seoTitle", array(
             "entitled"  =>  "fields.seoTitle.entitled",
             "attr"  => array(
-              'data-characters-max'  =>  $this->SeoConfiguration->get("nb_characters.ref_title"),
+              'data-characters-max'  =>  $this->seoConfiguration->get("nb_characters.ref_title"),
               "autocomplete"  =>  "off"
             )
           )
@@ -320,7 +304,7 @@ class FormListener
       ->add(Field\TextareaField::create("seoDescription", Field\TextareaField::SIZE_AUTO, array(
             "entitled"  =>  "fields.seoDescription.entitled",
             "attr"  => array(
-              'data-characters-max'  =>  $this->SeoConfiguration->get("nb_characters.ref_description"),
+              'data-characters-max'  =>  $this->seoConfiguration->get("nb_characters.ref_description"),
               "autocomplete"  =>  "off"
             )
           )

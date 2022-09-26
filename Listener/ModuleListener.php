@@ -44,7 +44,7 @@ class ModuleListener
   {
     if($moduleEvent->getModule()->getModuleKey() === "seo")
     {
-      if($this->domains->getEnabledDomainWithoutVirtual() > 1) {
+      if($this->domains->getEnabledDomainWithoutVirtual()) {
 
         /** @var Module $subModule */
         foreach($moduleEvent->getModule()->getChildren() as $subModule)

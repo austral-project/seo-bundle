@@ -82,17 +82,8 @@ class DoctrineListener implements EventSubscriber
   {
     /** @var EntityInterface $object */
     $object = $args->getObject();
-    if($object instanceof TranslateChildInterface)
-    {
-      $object = $object->getMaster();
-    }
-    if($this->urlParametersManagement->getObjectUrlParameterMapping($object))
-    {
-      $this->urlParametersManagement->generateUrlParameter($object);
-    }
     if($object instanceof UrlParameterInterface)
     {
-      $this->urlParametersManagement->updateUrlParameterWithParent($object);
       if($args->hasChangedField("path"))
       {
         $this->redirectionManagement->generateRedirectionAuto($object, $args->getNewValue("path"), $args->getOldValue("path"));

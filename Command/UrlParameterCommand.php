@@ -55,7 +55,7 @@ class UrlParameterCommand extends Command
       ])
       ->setDescription($this->titleCommande)
       ->setHelp(<<<'EOF'
-The <info>%command.name%</info> command to create or update modules roles
+The <info>%command.name%</info> command to generate Urls Parameters
 
   <info>php %command.full_name% --clean</info>
   <info>php %command.full_name% --generate</info>
@@ -111,7 +111,7 @@ EOF
 
       /** @var UrlParameterManagement $urlParameterManagement */
       $urlParameterManagement = $this->container->get('austral.seo.url_parameter.management');
-      $urlParameterManagement->initialize()->generateAllWithMapping();
+      $urlParameterManagement->initialize()->generateAllUrlParameters();
     }
 
 

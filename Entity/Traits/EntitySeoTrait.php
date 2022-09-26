@@ -25,12 +25,6 @@ trait EntitySeoTrait
 
   /**
    * @var string|null
-   * @ORM\Column(name="ref_h1", type="string", length=255, nullable=true)
-   */
-  protected ?string $refH1 = null;
-
-  /**
-   * @var string|null
    * @ORM\Column(name="ref_title", type="string", length=255, nullable=true)
    */
   protected ?string $refTitle = null;
@@ -69,37 +63,6 @@ trait EntitySeoTrait
    * @var string|null
    */
   protected ?string $bodyClass = null;
-
-  /**
-   * Set refH1
-   *
-   * @param string|null $refH1
-   *
-   * @return SeoInterface|EntitySeoTrait
-   */
-  public function setRefH1(?string $refH1):SeoInterface
-  {
-    $this->refH1 = $refH1;
-    return $this;
-  }
-
-  /**
-   * Get refH1
-   *
-   * @return string|null
-   */
-  public function getRefH1(): ?string
-  {
-    return $this->refH1;
-  }
-
-  /**
-   * @return string|null
-   */
-  public function getRefH1OrDefault(): ?string
-  {
-    return $this->refH1 ? : $this->__toString();
-  }
 
   /**
    * Set refTitle

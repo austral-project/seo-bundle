@@ -14,7 +14,6 @@ use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\EntityBundle\Event\EntityManagerEvent;
 use Austral\EntityBundle\Mapping\Mapping;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
-use Austral\SeoBundle\Mapping\UrlParameterMapping;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 
 /**
@@ -36,13 +35,11 @@ class EntityManagerListener
   protected Mapping $mapping;
 
   /**
-   * @param Mapping $mapping
    * @param UrlParameterManagement $urlParametersManagement
    */
-  public function __construct(Mapping $mapping, UrlParameterManagement $urlParametersManagement)
+  public function __construct(UrlParameterManagement $urlParametersManagement)
   {
     $this->urlParametersManagement = $urlParametersManagement;
-    $this->mapping = $mapping;
   }
 
   /**
@@ -52,7 +49,7 @@ class EntityManagerListener
    */
   protected function hasUrlParameterMapping(EntityInterface $object): bool
   {
-    return (bool) $this->mapping->getEntityClassMapping($object->getClassnameForMapping(),UrlParameterMapping::class);
+    return $this->urlParametersManagement->hasEntityMappingByObjectClassname($object->getClassnameForMapping());
   }
 
   /**
@@ -64,7 +61,7 @@ class EntityManagerListener
   {
     if($this->hasUrlParameterMapping($entityManagerEvent->getSourceObject()))
     {
-      $this->urlParametersManagement->duplicateUrlParameter($entityManagerEvent->getSourceObject(), $entityManagerEvent->getObject());
+      $this->urlParametersManagement->duplicateUrlParameterByObject($entityManagerEvent->getSourceObject(), $entityManagerEvent->getObject());
     }
   }
 
@@ -77,13 +74,9 @@ class EntityManagerListener
   public function updateUrlParameter(EntityManagerEvent $entityManagerEvent)
   {
     $object = $entityManagerEvent->getObject();
-    if($this->hasUrlParameterMapping($object))
+    if($this->hasUrlParameterMapping($object) && !$object instanceof UrlParameterInterface)
     {
       $this->urlParametersManagement->generateUrlParameter($object);
-    }
-    elseif($object instanceof UrlParameterInterface)
-    {
-      $this->urlParametersManagement->updateUrlParameterWithParent($object);
     }
   }
 
@@ -96,7 +89,7 @@ class EntityManagerListener
   {
     if($this->hasUrlParameterMapping($entityManagerEvent->getObject()))
     {
-      $this->urlParametersManagement->deleteUrlParameter($entityManagerEvent->getObject());
+      $this->urlParametersManagement->deleteUrlParameterByObject($entityManagerEvent->getObject());
     }
   }
 

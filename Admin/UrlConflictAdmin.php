@@ -13,7 +13,7 @@ namespace Austral\SeoBundle\Admin;
 use Austral\AdminBundle\Admin\Admin;
 use Austral\AdminBundle\Admin\Event\ListAdminEvent;
 use Austral\AdminBundle\Module\Modules;
-use Austral\EntityBundle\Entity\Interfaces\FilterByDomainInterface;
+use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\UrlParameter;
 use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
 use Austral\SeoBundle\Form\Field\PathField;
@@ -76,7 +76,7 @@ class UrlConflictAdmin extends Admin
           $object = $urlParameter->getObject();
           if($object instanceof FilterByDomainInterface)
           {
-            $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $object->getDomainId() ?? "for-all-domains");
+            $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $object->getDomainId() ?? DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS);
           }
           else
           {

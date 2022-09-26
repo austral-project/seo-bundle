@@ -28,6 +28,11 @@ final Class UrlParameterMapping extends EntityClassMapping
   /**
    * @var string|null
    */
+  protected ?string $methodUrlName = null;
+
+  /**
+   * @var string|null
+   */
   protected ?string $keyForObjectLink = null;
 
   /**
@@ -53,6 +58,25 @@ final Class UrlParameterMapping extends EntityClassMapping
   public function setMethodGenerateLastPath(?string $methodGenerateLastPath): UrlParameterMapping
   {
     $this->methodGenerateLastPath = $methodGenerateLastPath;
+    return $this;
+  }
+
+  /**
+   * @return string|null
+   */
+  public function getMethodUrlName(): ?string
+  {
+    return $this->methodUrlName;
+  }
+
+  /**
+   * @param string|null $methodUrlName
+   *
+   * @return $this
+   */
+  public function setMethodUrlName(?string $methodUrlName): UrlParameterMapping
+  {
+    $this->methodUrlName = $methodUrlName;
     return $this;
   }
 

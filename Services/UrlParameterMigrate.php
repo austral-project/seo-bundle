@@ -119,44 +119,47 @@ class UrlParameterMigrate
    * @param EntityInterface $object
    *
    * @return $this
-   * @throws \Exception
    */
   public function recoverySocialValues(UrlParameter $urlParameter, EntityInterface $object): UrlParameterMigrate
   {
-    /* Retreive value if RobotInterface Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
-    if($object instanceof SocialNetworkInterface && $urlParameter->getIsCreate())
-    {
-      $urlParameter->setSocialTitle($object->getSocialTitle());
-      $urlParameter->setSocialDescription($object->getSocialDescription());
-      /** @var FieldFileMapping $fieldFileMappingObject */
-      $fieldFileMappingObject = $this->mapping->getFieldsMappingByFieldname($object->getClassnameForMapping(), FieldFileMapping::class, "socialImage");
-
-      /** @var FieldFileMapping $fieldFileMappingObject */
-      $fieldFileMappingUrlParameter = $this->mapping->getFieldsMappingByFieldname($urlParameter->getClassnameForMapping(), FieldFileMapping::class, "socialImage");
-      if($fieldFileMappingObject && $fieldFileMappingUrlParameter)
+    try {
+      /* Retreive value if RobotInterface Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
+      if($object instanceof SocialNetworkInterface && $urlParameter->getIsCreate())
       {
-        $urlParameter->setSocialImage($object->getSocialImage());
-        $uploadsPathSource = AustralTools::join(
-          $fieldFileMappingObject->path->upload,
-          $fieldFileMappingObject->getFieldname()
-        );
-        $pathSource = AustralTools::join($uploadsPathSource, $fieldFileMappingObject->getObjectValue($object));
+        $urlParameter->setSocialTitle($object->getSocialTitle());
+        $urlParameter->setSocialDescription($object->getSocialDescription());
+        /** @var FieldFileMapping $fieldFileMappingObject */
+        $fieldFileMappingObject = $this->mapping->getFieldsMappingByFieldname($object->getClassnameForMapping(), FieldFileMapping::class, "socialImage");
 
-        $uploadsPathDestination = AustralTools::join(
-          $fieldFileMappingObject->path->upload,
-          $fieldFileMappingObject->getFieldname()
-        );
-        $pathDestination = AustralTools::join($uploadsPathDestination, $fieldFileMappingObject->getObjectValue($urlParameter));
-        $filesystem = new Filesystem();
-        if(file_exists($pathSource) && is_file($pathSource))
+        /** @var FieldFileMapping $fieldFileMappingObject */
+        $fieldFileMappingUrlParameter = $this->mapping->getFieldsMappingByFieldname($urlParameter->getClassnameForMapping(), FieldFileMapping::class, "socialImage");
+        if($fieldFileMappingObject && $fieldFileMappingUrlParameter)
         {
-          if(AustralTools::isImage($pathSource))
+          $urlParameter->setSocialImage($object->getSocialImage());
+          $uploadsPathSource = AustralTools::join(
+            $fieldFileMappingObject->path->upload,
+            $fieldFileMappingObject->getFieldname()
+          );
+          $pathSource = AustralTools::join($uploadsPathSource, $fieldFileMappingObject->getObjectValue($object));
+
+          $uploadsPathDestination = AustralTools::join(
+            $fieldFileMappingObject->path->upload,
+            $fieldFileMappingObject->getFieldname()
+          );
+          $pathDestination = AustralTools::join($uploadsPathDestination, $fieldFileMappingObject->getObjectValue($urlParameter));
+          $filesystem = new Filesystem();
+          if(file_exists($pathSource) && is_file($pathSource))
           {
-            $filesystem->copy($pathSource, $pathDestination);
-            $this->compression->compress($pathDestination, array("webp"));
+            if(AustralTools::isImage($pathSource))
+            {
+              $filesystem->copy($pathSource, $pathDestination);
+              $this->compression->compress($pathDestination, array("webp"));
+            }
           }
         }
       }
+    } catch (\Exception $e) {
+
     }
     return $this;
   }
