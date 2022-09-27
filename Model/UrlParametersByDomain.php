@@ -25,7 +25,6 @@ use Austral\SeoBundle\Services\UrlParameterMigrate;
 use Austral\ToolsBundle\AustralTools;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Routing\RequestContext;
 
 /**
  * Austral UrlParameters By Domain.
@@ -211,6 +210,14 @@ class UrlParametersByDomain
   public function getUrlParameters(): array
   {
     return $this->urlParameters;
+  }
+
+  /**
+   * @return array
+   */
+  public function getUrlParametersConflict(): array
+  {
+    return $this->urlParametersConflict;
   }
 
   /**
@@ -446,17 +453,17 @@ class UrlParametersByDomain
 
     if($urlParameter->getObjectRelation())
     {
-      $this->objectsMapping[$urlParameter->getId()] = $urlParameter->getObjectRelation();
+      $this->objectsMapping["{$urlParameter->getObjectRelation()}"] = $urlParameter->getObject();
       $this->pathByKeyLinks[$urlParameter->getObjectRelation()] = $urlParameter->getPath();
       $this->urlParametersByObjectKey[$urlParameter->getObjectRelation()] = $urlParameter->getId();
     }
 
     /** @var UrlParameterInterface $urlCompare */
-    if($urlCompare = AustralTools::getValueByKey($this->urlParameters, $urlParameter->getPath()))
+    if($urlCompare = AustralTools::getValueByKey($this->urlParametersByPath, $urlParameter->getPath()))
     {
-      if($urlCompare->getId() !== $urlParameter->getId())
+      if($urlCompare !== $urlParameter->getId())
       {
-        if(!array_key_exists($urlParameter->getPath(), $this->urlParametersConflict[$urlParameter->getDomainId()]))
+        if(!array_key_exists($urlParameter->getPath(), $this->urlParametersConflict))
         {
           $this->urlParametersConflict[$urlParameter->getPath()] = array(
             $urlCompare
@@ -560,6 +567,10 @@ class UrlParametersByDomain
    */
   public function updateUrlParameter(UrlParameterInterface $urlParameter): ?UrlParameterInterface
   {
+    if($urlParameter->getObjectRelation() && (!$urlParameter->getObject()))
+    {
+      $urlParameter->setObject($this->getObjectByUrlParameter($urlParameter));
+    }
     /** @var EntityInterface $object */
     if($object = $urlParameter->getObject())
     {
@@ -602,13 +613,12 @@ class UrlParametersByDomain
   }
 
   /**
+   * @param array $objectsByEntityClass
+   *
    * @return $this
-   * @throws \Exception
    */
-  public function generateAllUrlParameters(array $objectsByEntityClass = array()): UrlParametersByDomain
+  public function hydrateObjects(array $objectsByEntityClass = array()): UrlParametersByDomain
   {
-    $objectsForGenerateUrlParameters = array();
-
     /** @var EntityMapping $entityMapping */
     foreach($this->entitiesMapping as $entityMapping)
     {
@@ -624,23 +634,31 @@ class UrlParametersByDomain
           {
             if($object->getDomainId() === $this->domain->getId())
             {
-              $objectsForGenerateUrlParameters["{$entityMapping->entityClass}::{$object->getId()}"] = $object;
+              $this->objectsMapping["{$entityMapping->entityClass}::{$object->getId()}"] = $object;
             }
           }
           elseif($domainFilterMapping->getForAllDomainEnabled() || $this->checkDomainIds($object))
           {
-            $objectsForGenerateUrlParameters["{$entityMapping->entityClass}::{$object->getId()}"] = $object;
+            $this->objectsMapping["{$entityMapping->entityClass}::{$object->getId()}"] = $object;
           }
         }
         else
         {
-          $objectsForGenerateUrlParameters["{$entityMapping->entityClass}::{$object->getId()}"] = $object;
+          $this->objectsMapping["{$entityMapping->entityClass}::{$object->getId()}"] = $object;
         }
       }
     }
+    return $this;
+  }
 
+  /**
+   * @return $this
+   * @throws \Exception
+   */
+  public function generateAllUrlParameters(): UrlParametersByDomain
+  {
     /** @var EntityInterface $object */
-    foreach ($objectsForGenerateUrlParameters as $object)
+    foreach ($this->objectsMapping as $object)
     {
       $this->generateUrlParameter($object);
     }

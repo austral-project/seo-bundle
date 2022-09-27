@@ -53,7 +53,7 @@ class UrlConflictAdmin extends Admin
   protected function createFormByType(ListAdminEvent $listAdminEvent)
   {
     /** @var UrlParameterManagement $urlParameterManagement */
-    $urlParameterManagement = $this->container->get('austral.seo.url_parameter.management');
+    $urlParameterManagement = $this->container->get('austral.seo.url_parameter.management')->hydrateObjects();
 
     /** @var UrlParameterEntityManager $urlParameterEntityManager */
     $urlParameterEntityManager = $this->container->get('austral.entity_manager.url_parameter');
@@ -69,14 +69,14 @@ class UrlConflictAdmin extends Admin
     /** @var Modules $modules */
     $modules = $this->container->get('austral.admin.modules');
 
-    /** @var UrlParametersByDomain $urlsParametersByDomain */
-    foreach($urlParameterManagement->getUrlParametersByDomains() as $urlsParametersByDomain)
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach($urlParameterManagement->getUrlParametersByDomains() as $urlParametersByDomain)
     {
-      /** @var UrlParameter $urlParameter */
-      foreach($urlsParametersByDomain->getUrlParameters() as $urlConflict => $urlParametersByDomain)
+      foreach($urlParametersByDomain->getUrlParametersConflict() as $urlConflict => $urlParameterIds)
       {
-        foreach($urlParametersByDomain as $urlParameter)
+        foreach($urlParameterIds as $urlParameterId)
         {
+          $urlParameter = $urlParametersByDomain->getUrlParameterById($urlParameterId);
           $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass());
           /** @var EntityMapping $entityMapping */
           if($entityMapping = $urlParametersByDomain->getEntityMappingByObjectClassname($urlParameter->getObjectClass()))
@@ -144,7 +144,7 @@ class UrlConflictAdmin extends Admin
             "mapper"        =>  $formMapper,
             "form"          =>  $form,
             "view"          =>  $form->createView(),
-            "groupElement"  =>  "{$urlsParametersByDomain->getDomain()->getId()}.{$urlConflict}"
+            "groupElement"  =>  "{$urlParametersByDomain->getDomain()->getId()}.{$urlConflict}"
           );
         }
       }

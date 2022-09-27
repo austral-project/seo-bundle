@@ -78,6 +78,10 @@ class EntityManagerListener
     {
       $this->urlParametersManagement->generateUrlParameter($object);
     }
+    elseif($object instanceof UrlParameterInterface)
+    {
+      $this->urlParametersManagement->updateUrlParameter($object);
+    }
   }
 
   /**
