@@ -595,10 +595,10 @@ class UrlParameterManagement
   }
 
   /**
-   * @return void
-   * @throws \Exception
+   * @return $this
+   * @throws \Doctrine\ORM\Query\QueryException
    */
-  public function generateAllUrlParameters()
+  public function hydrateObjects(): UrlParameterManagement
   {
     $objectsByEntityClass = array();
     /** @var EntityMapping $entityMapping */
@@ -618,13 +618,30 @@ class UrlParameterManagement
         $objectsByEntityClass[$entityMapping->entityClass] = $repository->selectByQueryBuilder($queryBuilder);
       }
     }
-
     /** @var UrlParametersByDomain $urlParametersByDomain */
     foreach ($this->urlParametersByDomains as $urlParametersByDomain)
     {
       if(!$urlParametersByDomain->getIsVirtual())
       {
-        $urlParametersByDomain->generateAllUrlParameters($objectsByEntityClass);
+        $urlParametersByDomain->hydrateObjects($objectsByEntityClass);
+      }
+    }
+    return $this;
+  }
+
+  /**
+   * @return void
+   * @throws \Exception
+   */
+  public function generateAllUrlParameters()
+  {
+    $this->hydrateObjects();
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
+    {
+      if(!$urlParametersByDomain->getIsVirtual())
+      {
+        $urlParametersByDomain->generateAllUrlParameters();
       }
     }
     $this->entityManager->flush();
