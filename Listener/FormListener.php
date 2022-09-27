@@ -419,7 +419,9 @@ class FormListener
           ),
           "entry"               =>  array("type"  => get_class($this->urlParameterFormType)),
           "sortable"            =>  array(
-            "value"               =>  "id",
+            "value"               =>  function($urlParameter) use($domainsManagement) {
+              return $domainsManagement->getDomainById($urlParameter->getDomainId())->getPosition()."-".$urlParameter->getDomainId();
+            },
           ),
           "getter"              =>  function($object) use($urlParameters) {
             return $urlParameters;
