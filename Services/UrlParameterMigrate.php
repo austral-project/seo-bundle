@@ -63,6 +63,7 @@ class UrlParameterMigrate
     /* Retreive refUrlLast Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
     if($object instanceof SeoInterface && $urlParameter->getIsCreate())
     {
+      $urlParameter->setPath($object->getRefUrl());
       $urlParameter->setPathLast($object->getRefUrlLast());
     }
     return $this;
@@ -79,18 +80,9 @@ class UrlParameterMigrate
     /* Retreive value if SeoInterface Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
     if($object instanceof SeoInterface && $urlParameter->getIsCreate())
     {
-      if(!$urlParameter->getSeoTitle())
-      {
-        $urlParameter->setSeoTitle($object->getRefTitle());
-      }
-      if(!$urlParameter->getSeoDescription())
-      {
-        $urlParameter->setSeoDescription($object->getRefDescription());
-      }
-      if(!$urlParameter->getSeoCanonical())
-      {
-        $urlParameter->setSeoCanonical($object->getCanonical());
-      }
+      $urlParameter->setSeoTitle($object->getRefTitle());
+      $urlParameter->setSeoDescription($object->getRefDescription());
+      $urlParameter->setSeoCanonical($object->getCanonical());
     }
     return $this;
   }

@@ -17,6 +17,7 @@ use Austral\EntityBundle\Mapping\EntityMapping;
 use Austral\EntityBundle\Mapping\Mapping;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
+use Austral\SeoBundle\Event\UrlParameterEvent;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
 use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
@@ -240,6 +241,9 @@ class UrlParameterManagement
       }
     }
 
+    $urlParameterEvent = new UrlParameterEvent($this);
+    $this->dispatcher->dispatch($urlParameterEvent, UrlParameterEvent::EVENT_START);
+
     /** @var DomainInterface $domain */
     foreach($this->domainsManagement->getDomainsWithoutVirtual() as $domain)
     {
@@ -275,6 +279,7 @@ class UrlParameterManagement
       ))->build($urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS]);
       $this->urlParametersByDomainsForAll = $urlParametersByDomain;
     }
+    $this->dispatcher->dispatch($urlParameterEvent, UrlParameterEvent::EVENT_END);
     return $this;
   }
 
@@ -514,6 +519,20 @@ class UrlParameterManagement
       {
         $count += $urlParametersByDomain->getNbUrlParametersByStatus($status);
       }
+    }
+    return $count;
+  }
+
+  /**
+   * @return int
+   */
+  public function countUrlParametersConflict(): int
+  {
+    $count = 0;
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
+    {
+      $count += count($urlParametersByDomain->getUrlParametersConflict());
     }
     return $count;
   }

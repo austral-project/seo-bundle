@@ -92,6 +92,7 @@ class AustralRouting
    */
   public function generate(string $name, EntityInterface $object, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
   {
+    $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain()->getId() : $domainId;
     if(!$object instanceof UrlParameterInterface)
     {
       $urlParameter = $this->urlParameterManagement->getUrlParametersByObjectAndDomainId($object, $domainId);

@@ -63,14 +63,12 @@ class DashboardListener
       ->setValue($nbDraftAndUnPublished);
 
 
-    $nbDraftAndUnPublished = $this->urlParameterManagement->getTotalUrlsByStatus(UrlParameterInterface::STATUS_DRAFT);
-    $nbDraftAndUnPublished += $this->urlParameterManagement->getTotalUrlsByStatus(UrlParameterInterface::STATUS_UNPUBLISHED);
     $dashboardTileUrlConflict = new DashboardValues\Tile("urls_conflicts");
     $dashboardTileUrlConflict->setEntitled("dashboard.tiles.urls.conflicts.entitled")
       ->setIsTranslatableText(true)
       ->setPicto("link")
       ->setColorNum(3)
-      ->setValue($nbDraftAndUnPublished);
+      ->setValue($this->urlParameterManagement->countUrlParametersConflict());
 
     $dashboardEvent->getDashboardBlock()->getChild("austral_tiles_values")
       ->addValue($dashboardTilePagesPublished)

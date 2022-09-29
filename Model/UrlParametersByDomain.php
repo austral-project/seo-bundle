@@ -101,6 +101,11 @@ class UrlParametersByDomain
   /**
    * @var array
    */
+  protected array $urlParametersByObjectClassname = array();
+
+  /**
+   * @var array
+   */
   protected array $urlParametersConflict = array();
 
   /**
@@ -412,6 +417,17 @@ class UrlParametersByDomain
 
   /**
    * @param string $classname
+   *
+   * @return array
+   */
+  public function getUrlParametersByObjectClassname(string $classname): array
+  {
+    $classname = $this->getObjectReelClassname($classname);
+    return array_key_exists($classname, $this->urlParametersByObjectClassname) ? $this->urlParametersByObjectClassname[$classname] : array();
+  }
+
+  /**
+   * @param string $classname
    * @param string|int $objectId
    *
    * @return EntityInterface|null
@@ -439,6 +455,10 @@ class UrlParametersByDomain
    */
   public function hydrate(UrlParameterInterface $urlParameter): UrlParametersByDomain
   {
+    if(!array_key_exists($urlParameter->getId(), $this->urlParameters))
+    {
+      $this->urlParameters[$urlParameter->getId()] = $urlParameter;
+    }
     $urlParameter->setDomainId($this->domain->getId());
     $urlParameter->setDomain($this->domain);
     if($this->isVirtual) {
@@ -456,9 +476,10 @@ class UrlParametersByDomain
       $this->objectsMapping["{$urlParameter->getObjectRelation()}"] = $urlParameter->getObject();
       $this->pathByKeyLinks[$urlParameter->getObjectRelation()] = $urlParameter->getPath();
       $this->urlParametersByObjectKey[$urlParameter->getObjectRelation()] = $urlParameter->getId();
+      $this->urlParametersByObjectClassname[$urlParameter->getObjectClass()][$urlParameter->getObjectId()] = $urlParameter->getId();
     }
 
-    /** @var UrlParameterInterface $urlCompare */
+    /** @var string $urlCompare */
     if($urlCompare = AustralTools::getValueByKey($this->urlParametersByPath, $urlParameter->getPath()))
     {
       if($urlCompare !== $urlParameter->getId())
@@ -813,6 +834,7 @@ class UrlParametersByDomain
    */
   protected function recoveryValuesAustral30(UrlParameter $urlParameter, EntityInterface $object): UrlParametersByDomain
   {
+    $this->urlParameterMigrate->recoveryRefUrlPathValue($urlParameter, $object);
     $this->urlParameterMigrate->recoverySeoValues($urlParameter, $object);
     $this->urlParameterMigrate->recoveryRobotValues($urlParameter, $object);
     $this->urlParameterMigrate->recoverySocialValues($urlParameter, $object);

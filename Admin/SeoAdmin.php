@@ -90,7 +90,7 @@ class SeoAdmin extends Admin
     $request = $listAdminEvent->getRequest();
 
 
-    if(!$domainId = $this->module->getParametersByKey("austral_filter_by_domain"))
+    if(!$domainId = $this->module->getFilterDomainId())
     {
       $domainId =$this->container->get('austral.http.domains.management')->getCurrentDomain()->getId();
     }

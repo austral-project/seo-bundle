@@ -30,11 +30,6 @@ class EntityManagerListener
   protected UrlParameterManagement $urlParametersManagement;
 
   /**
-   * @var Mapping
-   */
-  protected Mapping $mapping;
-
-  /**
    * @param UrlParameterManagement $urlParametersManagement
    */
   public function __construct(UrlParameterManagement $urlParametersManagement)
