@@ -51,30 +51,30 @@ final class RoutingExtension extends AbstractExtension
 
   /**
    * @param string $name
-   * @param EntityInterface $object
+   * @param EntityInterface|null $object
    * @param array $parameters
    * @param string|null $domainId
    * @param bool $relative
    *
    * @return string|null
    */
-  public function getPath(string $name, EntityInterface $object, array $parameters = [], ?string $domainId = "current", bool $relative = false): ?string
+  public function getPath(string $name, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", bool $relative = false): ?string
   {
-    return $this->australRouting->getPath($name, $object, $parameters, $domainId, $relative ? UrlGeneratorInterface::RELATIVE_PATH : UrlGeneratorInterface::ABSOLUTE_PATH);
+    return $this->australRouting->getPath($name, $object, $parameters, $domainId, $relative);
   }
 
   /**
    * @param string $name
-   * @param EntityInterface $object
+   * @param EntityInterface|null $object
    * @param array $parameters
    * @param string|null $domainId
    * @param bool $schemeRelative
    *
    * @return string|null
    */
-  public function getUrl(string $name, EntityInterface $object, array $parameters = [], ?string $domainId = "current", bool $schemeRelative = false): ?string
+  public function getUrl(string $name, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", bool $schemeRelative = false): ?string
   {
-    return $this->australRouting->getUrl($name, $object, $parameters, $domainId, $schemeRelative ? UrlGeneratorInterface::NETWORK_PATH : UrlGeneratorInterface::ABSOLUTE_URL);
+    return $this->australRouting->getUrl($name, $object, $parameters, $domainId, $schemeRelative);
   }
 
   /**

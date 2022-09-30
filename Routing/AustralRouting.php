@@ -55,63 +55,67 @@ class AustralRouting
 
   /**
    * @param string $route
-   * @param EntityInterface $object
+   * @param EntityInterface|null $object
    * @param array $parameters
    * @param string|null $domainId
    * @param bool $relative
    *
    * @return string|null
    */
-  public function getPath(string $route, EntityInterface $object, array $parameters = [], ?string $domainId = "current", bool $relative = false): ?string
+  public function getPath(string $route, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", bool $relative = false): ?string
   {
     return $this->generate($route, $object, $parameters, $domainId, $relative ? UrlGeneratorInterface::RELATIVE_PATH : UrlGeneratorInterface::ABSOLUTE_PATH);
   }
 
   /**
    * @param string $route
-   * @param EntityInterface $object
+   * @param EntityInterface|null $object
    * @param array $parameters
    * @param string|null $domainId
    * @param bool $schemeRelative
    *
    * @return string|null
    */
-  public function getUrl(string $route, EntityInterface $object, array $parameters = [], ?string $domainId = "current", bool $schemeRelative = false): ?string
+  public function getUrl(string $route, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", bool $schemeRelative = false): ?string
   {
     return $this->generate($route, $object, $parameters, $domainId, $schemeRelative ? UrlGeneratorInterface::NETWORK_PATH : UrlGeneratorInterface::ABSOLUTE_URL);
   }
 
   /**
    * @param string $route
-   * @param EntityInterface $object
+   * @param EntityInterface|null $object
    * @param array $parameters
    * @param string|null $domainId
    * @param int $referenceType
    *
    * @return string
    */
-  public function generate(string $route, EntityInterface $object, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
+  public function generate(string $route, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
   {
     $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain()->getId() : $domainId;
-    if(!$object instanceof UrlParameterInterface)
+    if($object)
     {
-      $urlParameter = $this->urlParameterManagement->getUrlParametersByObjectAndDomainId($object, $domainId);
-    }
-    else
-    {
-      $urlParameter = $object;
-    }
-    if($urlParameter) {
-      /** @var RequestContext $requestContext */
-      $requestContext = $this->domainsManagement->getRequestContextByDomainId($urlParameter->getDomainId());
-      if($requestContext && $requestContext->getHost() !== $this->generator->getContext()->getHost())
+      if(!$object instanceof UrlParameterInterface)
       {
-        $this->generator->setContext($requestContext);
+        $urlParameter = $this->urlParameterManagement->getUrlParametersByObjectAndDomainId($object, $domainId);
       }
-      $parameters["slug"] = $urlParameter->getPath();
-      return $this->generator->generate($route, $parameters, $referenceType);
+      else
+      {
+        $urlParameter = $object;
+      }
+      if($urlParameter) {
+        $domainId = $urlParameter->getDomainId();
+        $parameters["slug"] = $urlParameter->getPath();
+      }
     }
-    return null;
+
+    /** @var RequestContext $requestContext */
+    $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainId);
+    if($requestContext && $requestContext->getHost() !== $this->generator->getContext()->getHost())
+    {
+      $this->generator->setContext($requestContext);
+    }
+    return $this->generator->generate($route, $parameters, $referenceType);
   }
 
 
