@@ -416,7 +416,7 @@ class UrlParameterManagement
           }
         }
       }
-      else
+      elseif(!$domainFilterMapping->getForAllDomainEnabled())
       {
         foreach($domainFilterMapping->getObjectValue($object, "domainIds") as $domainId)
         {
@@ -436,6 +436,18 @@ class UrlParameterManagement
             {
               $urlParametersByDomain->deleteUrlParameter($urlParameter);
             }
+          }
+        }
+      }
+      else
+      {
+        /** @var UrlParametersByDomain $urlParametersByDomain */
+        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomain)
+        {
+          if(!$urlParametersByDomain->getIsVirtual())
+          {
+            $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
+            $urlParameters[] = $urlParameter;
           }
         }
       }
