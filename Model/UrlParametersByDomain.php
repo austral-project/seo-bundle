@@ -212,6 +212,16 @@ class UrlParametersByDomain
   /**
    * @return array
    */
+  public function getUrlParametersPath(): array
+  {
+    $urlParametersPath = $this->urlParametersByPath;
+    ksort($urlParametersPath);
+    return $urlParametersPath;
+  }
+
+  /**
+   * @return array
+   */
   public function getUrlParameters(): array
   {
     return $this->urlParameters;
