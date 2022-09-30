@@ -672,6 +672,7 @@ class UrlParametersByDomain
           {
             $this->objectsMapping["{$entityMapping->entityClass}::{$object->getId()}"] = $object;
           }
+
         }
         else
         {
@@ -691,7 +692,10 @@ class UrlParametersByDomain
     /** @var EntityInterface $object */
     foreach ($this->objectsMapping as $object)
     {
-      $this->generateUrlParameter($object);
+      if($this->objectIsMapping($object))
+      {
+        $this->generateUrlParameter($object);
+      }
     }
     return $this;
   }
@@ -825,14 +829,20 @@ class UrlParametersByDomain
     {
       foreach($object->getChildren() as $child)
       {
-        $this->generateUrlParameter($child);
+        if($this->objectIsMapping($child))
+        {
+          $this->generateUrlParameter($child);
+        }
       }
     }
     if(method_exists($object, "getChildrenEntities") && $object->getChildrenEntities())
     {
       foreach($object->getChildrenEntities() as $child)
       {
-        $this->generateUrlParameter($child);
+        if($this->objectIsMapping($child))
+        {
+          $this->generateUrlParameter($child);
+        }
       }
     }
     return $this;

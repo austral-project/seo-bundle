@@ -260,6 +260,7 @@ class UrlParameterManagement
           $this->keysForObjectLink
         ))->build($urlParametersEntityByDomain[$domain->getId()]);
 
+
         $this->urlParametersByDomains[$domain->getId()] = $urlParametersByDomain;
         $this->domainIdByUrlParameterId = array_merge($this->domainIdByUrlParameterId, $urlParametersByDomain->getDomainIdByUrlParameterId());
       }
@@ -517,6 +518,22 @@ class UrlParameterManagement
   }
 
   /**
+   * @param EntityInterface $object
+   * @param string $domainIdOrKey
+   *
+   * @return UrlParameterInterface|null
+   */
+  public function retreiveUrlParameterByObject(EntityInterface $object, string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameterInterface
+  {
+    /** @var UrlParametersByDomain $urlParametersByDomain */
+    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
+    {
+      return $urlParametersByDomain->getUrlParameterByObject($object, false);
+    }
+    return null;
+  }
+
+  /**
    * @param string $status
    *
    * @return int
@@ -649,6 +666,7 @@ class UrlParameterManagement
         $objectsByEntityClass[$entityMapping->entityClass] = $repository->selectByQueryBuilder($queryBuilder);
       }
     }
+
     /** @var UrlParametersByDomain $urlParametersByDomain */
     foreach ($this->urlParametersByDomains as $urlParametersByDomain)
     {
@@ -667,6 +685,7 @@ class UrlParameterManagement
   public function generateAllUrlParameters()
   {
     $this->hydrateObjects();
+
     /** @var UrlParametersByDomain $urlParametersByDomain */
     foreach ($this->urlParametersByDomains as $urlParametersByDomain)
     {
