@@ -16,7 +16,7 @@ composer require austral/entity-seo-bundle
 ```
 
 ## Documentation
-See documentation on the [official website](https://austral.dev/bundles/entity-seo-bundles)
+See documentation on the [official website](https://austral.dev/en/bundles/entity-seo-bundles)
 
 ## Commit Messages
 
