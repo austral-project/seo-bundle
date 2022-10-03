@@ -784,14 +784,14 @@ class UrlParametersByDomain
    */
   protected function generatePathUrlParameter(UrlParameterInterface $urlParameter, EntityInterface $object): UrlParametersByDomain
   {
-    if($object instanceof TreePageInterface && ($treePageParent = $object->getTreePageParent($this->domain->getId())))
+    if($object instanceof TreePageInterface && ($treePageParent = $object->getTreePageParent($this->domain->getId(), true)))
     {
       if($urlParameterParent = $this->getUrlParameterByObject($treePageParent))
       {
         $urlParameter->setPath(($urlParameterParent->getPath() ? "{$urlParameterParent->getPath()}/" : null )."{$urlParameter->getPathLast()}");
       }
     }
-    if(!$urlParameter->getPath())
+    else
     {
       $urlParameter->setPath("{$urlParameter->getPathLast()}");
     }

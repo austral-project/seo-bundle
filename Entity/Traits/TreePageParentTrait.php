@@ -39,13 +39,13 @@ trait TreePageParentTrait
   /**
    * @return TreePageInterface|EntityInterface|null
    */
-  public function getTreePageParent(string $domainId = DomainsManagement::DOMAIN_ID_MASTER): ?TreePageInterface
+  public function getTreePageParent(string $domainId = DomainsManagement::DOMAIN_ID_MASTER, bool $strict = false): ?TreePageInterface
   {
     if(array_key_exists($domainId, $this->treePageParents))
     {
       return $this->treePageParents[$domainId];
     }
-    return AustralTools::first($this->treePageParents, null);
+    return $strict === false ? AustralTools::first($this->treePageParents, null) : null;
   }
 
 }
