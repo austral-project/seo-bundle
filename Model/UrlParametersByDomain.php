@@ -225,7 +225,7 @@ class UrlParametersByDomain
   public function getUrlParametersPathIndexed(): array
   {
     $urlParametersPathForSitemap = array();
-    /** @var UrlParameter $urlParameter */
+    /** @var UrlParameterInterface $urlParameter */
     foreach ($this->urlParameters as $urlParameter)
     {
       if($urlParameter->getInSitemap() && $urlParameter->getIsIndex() && $urlParameter->isPublished())

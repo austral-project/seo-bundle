@@ -732,12 +732,24 @@ class UrlParameterManagement
           }
         }
       }
-      else
+      elseif(!$domainFilterMapping->getForAllDomainEnabled())
       {
         foreach($domainFilterMapping->getObjectValue($object, "domainIds") as $domainId)
         {
           $urlParametersByDomain = $this->getUrlParametersByDomain($domainId);
           if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
+          {
+            $urlParametersByDomain->generateUrlParameter($object);
+            $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+          }
+        }
+      }
+      else
+      {
+        /** @var UrlParametersByDomain $urlParametersByDomain */
+        foreach($this->urlParametersByDomains as $urlParametersByDomain)
+        {
+          if(!$urlParametersByDomain->getIsVirtual())
           {
             $urlParametersByDomain->generateUrlParameter($object);
             $this->recoveryValuesAustral30($urlParametersByDomain, $object);
