@@ -678,6 +678,14 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   /**
    * @return bool
    */
+  public function isPublished(): bool
+  {
+    return $this->status === UrlParameterInterface::STATUS_PUBLISHED;
+  }
+
+  /**
+   * @return bool
+   */
   public function getIsIndex(): bool
   {
     return $this->isIndex;

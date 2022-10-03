@@ -222,6 +222,24 @@ class UrlParametersByDomain
   /**
    * @return array
    */
+  public function getUrlParametersPathIndexed(): array
+  {
+    $urlParametersPathForSitemap = array();
+    /** @var UrlParameter $urlParameter */
+    foreach ($this->urlParameters as $urlParameter)
+    {
+      if($urlParameter->getInSitemap() && $urlParameter->getIsIndex() && $urlParameter->isPublished())
+      {
+        $urlParametersPathForSitemap[$urlParameter->getPath()] = $urlParameter->getId();
+      }
+    }
+    ksort($urlParametersPathForSitemap);
+    return $urlParametersPathForSitemap;
+  }
+
+  /**
+   * @return array
+   */
   public function getUrlParameters(): array
   {
     return $this->urlParameters;

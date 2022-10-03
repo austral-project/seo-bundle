@@ -295,6 +295,11 @@ interface UrlParameterInterface
   /**
    * @return bool
    */
+  public function isPublished(): bool;
+
+  /**
+   * @return bool
+   */
   public function getIsIndex(): bool;
 
   /**
