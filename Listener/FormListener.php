@@ -27,7 +27,6 @@ use Austral\FormBundle\Mapper\GroupFields;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Doctrine\ORM\Query\QueryException;
 use Exception;
-use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
