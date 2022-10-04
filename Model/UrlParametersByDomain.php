@@ -739,7 +739,7 @@ class UrlParametersByDomain
   protected function generatePathWithParent(EntityInterface $object): UrlParametersByDomain
   {
     $urlParameter = $this->recoveryOrCreateUrlParameterByObject($object);
-    if($urlParameter->getIsVirtual())
+    if(!$urlParameter->getIsVirtual())
     {
       // TODO Check for 1 domain with multi language
       $urlParameter->setLanguage($this->domain->getCurrentLanguage());
