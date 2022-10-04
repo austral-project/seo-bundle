@@ -15,6 +15,7 @@ use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Austral\ToolsBundle\Command\Base\Command;
 use Doctrine\DBAL\Driver\PDO\MySQL\Driver;
+use Doctrine\ORM\QueryBuilder;
 use Exception;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -81,28 +82,41 @@ EOF
   {
 
     $this->urlParameterEntityManager = $this->container->get("austral.entity_manager.url_parameter");
+    $domainId = $input->getOption("domain");
     if($input->getOption("clean"))
     {
-      $classMetaData = $this->urlParameterEntityManager->getDoctrineEntityManager()->getClassMetadata($this->urlParameterEntityManager->getClass());
-      $connection = $this->urlParameterEntityManager->getDoctrineEntityManager()->getConnection();
-      $dbPlatform = $connection->getDatabasePlatform();
-      $connection->beginTransaction();
-      $isMysql = $connection->getDriver() instanceof Driver;
-      try {
-        if($isMysql) {
-          $connection->executeQuery('SET FOREIGN_KEY_CHECKS=0');
-        }
-        $q = $dbPlatform->getTruncateTableSql($classMetaData->getTableName(), true);
-        $connection->executeStatement($q);
-        if($isMysql) {
-          $connection->executeQuery('SET FOREIGN_KEY_CHECKS=1');
-        }
-        $connection->commit();
-        $this->viewMessage("UrlParameters Clean successfully !!!", "success");
+      if($domainId)
+      {
+        $urlParameters = $this->urlParameterEntityManager->selectAll("id", "ASC", function(QueryBuilder $queryBuilder) use($domainId){
+          $queryBuilder->where("root.domainId = :domainId")
+            ->setParameter("domainId", $domainId);
+          return $queryBuilder;
+        });
+        $this->urlParameterEntityManager->deletes($urlParameters);
       }
-      catch (Exception $e) {
-        $connection->rollback();
-        $this->viewMessage("UrlParameters Clean error -> {$e->getMessage()} !!!", "error");
+      else
+      {
+        $classMetaData = $this->urlParameterEntityManager->getDoctrineEntityManager()->getClassMetadata($this->urlParameterEntityManager->getClass());
+        $connection = $this->urlParameterEntityManager->getDoctrineEntityManager()->getConnection();
+        $dbPlatform = $connection->getDatabasePlatform();
+        $connection->beginTransaction();
+        $isMysql = $connection->getDriver() instanceof Driver;
+        try {
+          if($isMysql) {
+            $connection->executeQuery('SET FOREIGN_KEY_CHECKS=0');
+          }
+          $q = $dbPlatform->getTruncateTableSql($classMetaData->getTableName(), true);
+          $connection->executeStatement($q);
+          if($isMysql) {
+            $connection->executeQuery('SET FOREIGN_KEY_CHECKS=1');
+          }
+          $connection->commit();
+          $this->viewMessage("UrlParameters Clean successfully !!!", "success");
+        }
+        catch (Exception $e) {
+          $connection->rollback();
+          $this->viewMessage("UrlParameters Clean error -> {$e->getMessage()} !!!", "error");
+        }
       }
     }
     if($input->getOption("generate"))
