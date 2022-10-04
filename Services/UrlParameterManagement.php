@@ -682,14 +682,14 @@ class UrlParameterManagement
    * @return void
    * @throws \Exception
    */
-  public function generateAllUrlParameters()
+  public function generateAllUrlParameters(?string $domainId = null)
   {
     $this->hydrateObjects();
 
     /** @var UrlParametersByDomain $urlParametersByDomain */
     foreach ($this->urlParametersByDomains as $urlParametersByDomain)
     {
-      if(!$urlParametersByDomain->getIsVirtual())
+      if(!$urlParametersByDomain->getIsVirtual() && (!$domainId || $domainId === $urlParametersByDomain->getDomain()->getId()))
       {
         $urlParametersByDomain->generateAllUrlParameters();
       }

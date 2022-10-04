@@ -52,6 +52,7 @@ class UrlParameterCommand extends Command
       ->setDefinition([
         new InputOption('--clean', '-c', InputOption::VALUE_NONE, 'Delete all UrlParameters'),
         new InputOption('--generate', '-g', InputOption::VALUE_NONE, 'Generate automatically UrlParameters'),
+        new InputOption('--domain', "", InputOption::VALUE_REQUIRED, 'Domain Id'),
       ])
       ->setDescription($this->titleCommande)
       ->setHelp(<<<'EOF'
@@ -59,6 +60,7 @@ The <info>%command.name%</info> command to generate Urls Parameters
 
   <info>php %command.full_name% --clean</info>
   <info>php %command.full_name% --generate</info>
+  <info>php %command.full_name% --generate --domain ID</info>
   <info>php %command.full_name% --clean --generate</info>
   
   <info>php %command.full_name% -c</info>
@@ -111,7 +113,7 @@ EOF
 
       /** @var UrlParameterManagement $urlParameterManagement */
       $urlParameterManagement = $this->container->get('austral.seo.url_parameter.management');
-      $urlParameterManagement->initialize()->generateAllUrlParameters();
+      $urlParameterManagement->initialize()->generateAllUrlParameters($input->getOption("domain"));
     }
 
 
