@@ -710,7 +710,7 @@ class UrlParametersByDomain
     /** @var EntityInterface $object */
     foreach ($this->objectsMapping as $object)
     {
-      if($this->objectIsMapping($object))
+      if($object instanceof EntityInterface && $this->objectIsMapping($object))
       {
         $this->generateUrlParameter($object);
       }
@@ -739,17 +739,20 @@ class UrlParametersByDomain
   protected function generatePathWithParent(EntityInterface $object): UrlParametersByDomain
   {
     $urlParameter = $this->recoveryOrCreateUrlParameterByObject($object);
-    // TODO Check for 1 domain with multi language
-    $urlParameter->setLanguage($this->domain->getCurrentLanguage());
+    if($urlParameter->getIsVirtual())
+    {
+      // TODO Check for 1 domain with multi language
+      $urlParameter->setLanguage($this->domain->getCurrentLanguage());
 
-    $this->generatePathLast($urlParameter);
-    $this->generatePathUrlParameter($urlParameter, $object);
+      $this->generatePathLast($urlParameter);
+      $this->generatePathUrlParameter($urlParameter, $object);
 
-    $this->recoveryValuesAustral30($urlParameter, $object);
+      $this->recoveryValuesAustral30($urlParameter, $object);
 
-    $this->hydrate($urlParameter);
-    if(!$this->isVirtual) {
-      $this->urlParameterEntityManager->update($urlParameter, false);
+      $this->hydrate($urlParameter);
+      if(!$this->isVirtual) {
+        $this->urlParameterEntityManager->update($urlParameter, false);
+      }
     }
     return $this;
   }
