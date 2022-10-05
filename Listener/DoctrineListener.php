@@ -11,13 +11,15 @@
 namespace Austral\SeoBundle\Listener;
 
 use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateChildInterface;
+use Austral\EntityBundle\Mapping\Mapping;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Entity\Redirection;
+use Austral\SeoBundle\Mapping\UrlParameterMapping;
 use Austral\SeoBundle\Services\RedirectionManagement;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Doctrine\Common\EventArgs;
 use Doctrine\Common\EventSubscriber;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\NonUniqueResultException;
@@ -41,6 +43,11 @@ class DoctrineListener implements EventSubscriber
   protected bool $postFlush = false;
 
   /**
+   * @var Mapping
+   */
+  protected Mapping $mapping;
+
+  /**
    * @var RedirectionManagement
    */
   protected RedirectionManagement $redirectionManagement;
@@ -53,10 +60,11 @@ class DoctrineListener implements EventSubscriber
   /**
    * DoctrineListener constructor.
    */
-  public function __construct(UrlParameterManagement $urlParametersManagement, RedirectionManagement $redirectionManagement)
+  public function __construct(Mapping $mapping, UrlParameterManagement $urlParametersManagement, RedirectionManagement $redirectionManagement)
   {
     $parts = explode('\\', $this->getNamespace());
     $this->name = end($parts);
+    $this->mapping = $mapping;
     $this->redirectionManagement = $redirectionManagement;
     $this->urlParametersManagement = $urlParametersManagement;
   }
@@ -67,9 +75,25 @@ class DoctrineListener implements EventSubscriber
   public function getSubscribedEvents()
   {
     return array(
+      'postLoad',
       'preUpdate',
       "postFlush"
     );
+  }
+
+  /**
+   * @param LifecycleEventArgs $args
+   *
+   * @throws \Exception
+   */
+  public function postLoad(LifecycleEventArgs $args)
+  {
+    /** @var EntityInterface $object */
+    $object = $args->getObject();
+    if($this->mapping->getEntityClassMapping($object->getClassnameForMapping(), UrlParameterMapping::class))
+    {
+      $object->setUrlParameters($this->urlParametersManagement->getUrlParametersByObject($object));
+    }
   }
 
   /**

@@ -52,7 +52,7 @@ services:
 
   austral.seo.doctrine.listener:
     class:        Austral\SeoBundle\Listener\DoctrineListener
-    arguments:    ["@austral.seo.url_parameter.management", "@austral.seo.redirection.management"]
+    arguments:    ["@austral.entity.mapping","@austral.seo.url_parameter.management", "@austral.seo.redirection.management"]
     tags:
       - { name: doctrine.event_subscriber, connection: default }
 

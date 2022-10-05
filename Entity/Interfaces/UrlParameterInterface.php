@@ -29,6 +29,8 @@ interface UrlParameterInterface
   const SECURITY_USER = "user";
   const SECURITY_PASSWORD = "password";
 
+  const CHOICE_VALUE_FIELDNAME = "urlParameter.status";
+
   /**
    * @return string|null
    */
