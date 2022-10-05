@@ -12,7 +12,7 @@ namespace Austral\SeoBundle\Listener;
 
 use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\EntityBundle\Event\EntityManagerEvent;
-use Austral\EntityBundle\Mapping\Mapping;
+use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 
@@ -35,6 +35,38 @@ class EntityManagerListener
   public function __construct(UrlParameterManagement $urlParametersManagement)
   {
     $this->urlParametersManagement = $urlParametersManagement;
+  }
+
+  protected bool $isCreateDomain = false;
+
+  /**
+   * @param EntityManagerEvent $entityManagerEvent
+   *
+   * @return void
+   */
+  public function createDomain(EntityManagerEvent $entityManagerEvent)
+  {
+    if($entityManagerEvent->getObject() instanceof DomainInterface)
+    {
+      $this->isCreateDomain = true;
+    }
+  }
+
+  /**
+   * @param EntityManagerEvent $entityManagerEvent
+   *
+   * @return void
+   * @throws \Exception
+   */
+  public function generateUrlParameter(EntityManagerEvent $entityManagerEvent)
+  {
+    if($this->isCreateDomain && $entityManagerEvent->getObject() instanceof DomainInterface)
+    {
+      /** @var DomainInterface $domain */
+      $domain = $entityManagerEvent->getObject();
+      $this->urlParametersManagement->addUrlParametersByDomain($domain)
+        ->generateAllUrlParameters($domain->getId());
+    }
   }
 
   /**

@@ -551,10 +551,10 @@ class UrlParametersByDomain
    * @param EntityInterface $objectSource
    * @param EntityInterface $object
    *
-   * @return $this
+   * @return UrlParameterInterface|null
    * @throws \Exception
    */
-  public function duplicateUrlParameterByObject(EntityInterface $objectSource, EntityInterface $object): UrlParametersByDomain
+  public function duplicateUrlParameterByObject(EntityInterface $objectSource, EntityInterface $object): ?UrlParameterInterface
   {
     /** @var UrlParameterInterface $urlParameterSource */
     if($urlParameterSource = $this->getUrlParameterByObject($objectSource))
@@ -563,12 +563,14 @@ class UrlParametersByDomain
 
       /** @var UrlParameterInterface|EntityInterface $urlParameter */
       $urlParameter = $this->urlParameterEntityManager->duplicate($urlParameterSource);
-      $urlParameter->setId(Uuid::uuid4()->toString());
-      // TODO Check for 1 domain with multi language
       $urlParameter->setLanguage($this->domain->getCurrentLanguage());
 
-      $uniqueKey = AustralTools::random(4);
-      $urlParameter->setPathLast("{$urlParameter->getPathLast()}-copy-{$uniqueKey}")
+      $uniqueKey = null;
+      if($urlParameter->getDomainId() === $urlParameterSource->getDomainId())
+      {
+        $uniqueKey = "-copy-".AustralTools::random(4);
+      }
+      $urlParameter->setPathLast("{$urlParameter->getPathLast()}{$uniqueKey}")
         ->setPath("{$urlParameter->getPath()}-copy-{$uniqueKey}")
         ->setObjectRelation("{$object->getClassnameForMapping()}::{$object->getId()}")
         ->setObject($object)
@@ -577,9 +579,9 @@ class UrlParametersByDomain
       if(!$this->isVirtual) {
         $this->urlParameterEntityManager->update($urlParameter, false);
       }
-      $this->hydrate($urlParameter);
+      return $urlParameter;
     }
-    return $this;
+    return null;
   }
 
   /**

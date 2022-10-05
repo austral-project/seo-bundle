@@ -247,24 +247,10 @@ class UrlParameterManagement
     /** @var DomainInterface $domain */
     foreach($this->domainsManagement->getDomainsWithoutVirtual() as $domain)
     {
-      $this->debug->stopWatchStart("austral.url_parameter.build", $this->debugContainer);
       if((!array_key_exists($domain->getId(), $this->urlParametersByDomains) && $domain->getId() !== DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS) || $reload)
       {
-        $urlParametersByDomain = (new UrlParametersByDomain(
-          $this->dispatcher,
-          $domain,
-          $this->entityManager,
-          $this->urlParameterEntityManager,
-          $this->urlParameterMigrate,
-          $this->entitiesMapping,
-          $this->keysForObjectLink
-        ))->build($urlParametersEntityByDomain[$domain->getId()]);
-
-
-        $this->urlParametersByDomains[$domain->getId()] = $urlParametersByDomain;
-        $this->domainIdByUrlParameterId = array_merge($this->domainIdByUrlParameterId, $urlParametersByDomain->getDomainIdByUrlParameterId());
+        $this->addUrlParametersByDomain($domain, $urlParametersEntityByDomain);
       }
-      $this->debug->stopWatchStop("austral.url_parameter.build");
     }
 
     if($this->domainsManagement->getEnabledDomainWithoutVirtual())
@@ -281,6 +267,30 @@ class UrlParameterManagement
       $this->urlParametersByDomainsForAll = $urlParametersByDomain;
     }
     $this->dispatcher->dispatch($urlParameterEvent, UrlParameterEvent::EVENT_END);
+    return $this;
+  }
+
+  /**
+   * @param DomainInterface $domain
+   * @param array $urlParametersEntityByDomain
+   *
+   * @return $this
+   */
+  public function addUrlParametersByDomain(DomainInterface $domain, array $urlParametersEntityByDomain = array()): UrlParameterManagement
+  {
+    $this->debug->stopWatchStart("austral.url_parameter.build", $this->debugContainer);
+    $urlParametersByDomain = (new UrlParametersByDomain(
+      $this->dispatcher,
+      $domain,
+      $this->entityManager,
+      $this->urlParameterEntityManager,
+      $this->urlParameterMigrate,
+      $this->entitiesMapping,
+      $this->keysForObjectLink
+    ))->build(AustralTools::getValueByKey($urlParametersEntityByDomain, $domain->getId(), array()));
+    $this->urlParametersByDomains[$domain->getId()] = $urlParametersByDomain;
+    $this->domainIdByUrlParameterId = array_merge($this->domainIdByUrlParameterId, $urlParametersByDomain->getDomainIdByUrlParameterId());
+    $this->debug->stopWatchStop("austral.url_parameter.build");
     return $this;
   }
 
@@ -619,10 +629,22 @@ class UrlParameterManagement
    */
   public function duplicateUrlParameterByObject(EntityInterface $objectSource, EntityInterface $object): UrlParameterManagement
   {
+    $urlParametersDuplicate = array();
     /** @var UrlParametersByDomain $urlParametersByDomain */
     foreach($this->urlParametersByDomains as $urlParametersByDomain)
     {
-      $urlParametersByDomain->duplicateUrlParameterByObject($objectSource, $object);
+      if($urlParameterDuplicate = $urlParametersByDomain->duplicateUrlParameterByObject($objectSource, $object))
+      {
+        $urlParametersDuplicate[] = $urlParameterDuplicate;
+      }
+    }
+    foreach ($urlParametersDuplicate as $urlParameterDuplicate)
+    {
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      if($urlParametersByDomain = $this->getUrlParametersByDomain($urlParameterDuplicate->getDomainId()))
+      {
+        $urlParametersByDomain->hydrate($urlParameterDuplicate);
+      }
     }
     return $this;
   }
