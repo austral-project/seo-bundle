@@ -73,6 +73,12 @@ services:
       - { name: kernel.event_listener, event: "austral.entity_manager.delete", method: deleteUrlParameter }
       - { name: kernel.event_listener, event: "austral.entity_manager.push.after", method: generateUrlParameter }
 
+  austral.seo.query_builder.listener:
+    class:        Austral\SeoBundle\Listener\UrlParameterQueryBuilderListener
+    arguments:    ["@austral.seo.url_parameter.management", "@austral.http.domains.management"]
+    tags:
+      - { name: kernel.event_listener, event: "austral.event.entity.query_builder.condition", method: conditionUrlParameterQuery }
+
 ##### Entities Manager #####
 
   ##### Url Parameter Entity Manager
