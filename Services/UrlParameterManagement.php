@@ -329,11 +329,11 @@ class UrlParameterManagement
   }
 
   /**
-   * @param string $domainIdOrKey
+   * @param string|null $domainIdOrKey
    *
    * @return string|null
    */
-  protected function getReelDomainId(string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?string
+  protected function getReelDomainId(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?string
   {
     return $this->domainsManagement->getReelDomainId($domainIdOrKey);
   }
@@ -478,11 +478,11 @@ class UrlParameterManagement
 
   /**
    * @param EntityInterface $object
-   * @param string $domainIdOrKey
+   * @param string|null $domainIdOrKey
    *
    * @return ?UrlParameterInterface
    */
-  public function getUrlParametersByObjectAndDomainId(EntityInterface $object, string $domainIdOrKey = "current"): ?UrlParameterInterface
+  public function getUrlParametersByObjectAndDomainId(EntityInterface $object, ?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameterInterface
   {
     /** @var UrlParametersByDomain $urlParametersByDomain */
     if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
@@ -501,23 +501,23 @@ class UrlParameterManagement
   }
 
   /**
-   * @param string $domainIdOrKey
+   * @param string|null $domainIdOrKey
    *
    * @return UrlParametersByDomain|null
    */
-  public function getUrlParametersByDomain(string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParametersByDomain
+  public function getUrlParametersByDomain(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParametersByDomain
   {
     return AustralTools::getValueByKey($this->urlParametersByDomains, $this->getReelDomainId($domainIdOrKey), null);
   }
 
   /**
-   * @param string $domainIdOrKey
+   * @param string|null $domainIdOrKey
    * @param string|null $slug
    * @param bool $objectInit
    *
    * @return UrlParameterInterface|null
    */
-  public function retreiveUrlParameterByDomainIdAndSlug(string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER, ?string $slug = null, bool $objectInit = false): ?UrlParameterInterface
+  public function retreiveUrlParameterByDomainIdAndSlug(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER, ?string $slug = null, bool $objectInit = false): ?UrlParameterInterface
   {
     /** @var UrlParametersByDomain $urlParametersByDomain */
     if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
@@ -529,11 +529,11 @@ class UrlParameterManagement
 
   /**
    * @param EntityInterface $object
-   * @param string $domainIdOrKey
+   * @param string|null $domainIdOrKey
    *
    * @return UrlParameterInterface|null
    */
-  public function retreiveUrlParameterByObject(EntityInterface $object, string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameterInterface
+  public function retreiveUrlParameterByObject(EntityInterface $object, ?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameterInterface
   {
     /** @var UrlParametersByDomain $urlParametersByDomain */
     if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
