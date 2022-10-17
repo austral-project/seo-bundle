@@ -115,7 +115,11 @@ class AustralRouting
     {
       $this->generator->setContext($requestContext);
     }
-    return $this->generator->generate($route, $parameters, $referenceType);
+    if(array_key_exists("slug", $parameters) && $parameters["slug"])
+    {
+      return $this->generator->generate($route, $parameters, $referenceType);
+    }
+    return "#";
   }
 
 
