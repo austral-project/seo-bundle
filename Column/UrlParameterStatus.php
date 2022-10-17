@@ -149,7 +149,8 @@ class UrlParameterStatus extends ColumnWithPath
    */
   public function getter($object)
   {
-    return $object->getUrlParameter($this->domainId)->getStatus();
+    $urlParameter = $object->getUrlParameter($this->domainId);
+    return $urlParameter ? $urlParameter->getStatus() : null;
   }
 
   /**

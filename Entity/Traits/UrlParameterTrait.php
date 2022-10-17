@@ -30,9 +30,9 @@ trait UrlParameterTrait
   /**
    * @param string|null $domainId
    *
-   * @return UrlParameter
+   * @return UrlParameter|null
    */
-  public function getUrlParameter(string $domainId = DomainsManagement::DOMAIN_ID_MASTER): UrlParameter
+  public function getUrlParameter(string $domainId = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameter
   {
     if(array_key_exists($domainId, $this->urlParameters))
     {
