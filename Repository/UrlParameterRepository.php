@@ -106,12 +106,18 @@ class UrlParameterRepository extends EntityRepository
    * @return Collection|array
    * @throws QueryException
    */
-  public function selectUrlsParameters()
+  public function selectUrlsParameters(string $language = null)
   {
     $queryBuilder = $this->createQueryBuilder('root')
       ->indexBy("root", "root.id")
       ->orderBy("root.path", "ASC")
       ->addOrderBy("root.updated", "DESC");
+
+    if($language) {
+      $queryBuilder->where("root.language = :language")
+        ->setParameter("language", $language);
+    }
+
     $query = $queryBuilder->getQuery();
     try {
       $objects = $query->execute();

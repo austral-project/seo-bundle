@@ -23,7 +23,6 @@ use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
 use Austral\SeoBundle\Services\UrlParameterMigrate;
 use Austral\ToolsBundle\AustralTools;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -139,11 +138,17 @@ class UrlParametersByDomain
   protected bool $isVirtual = false;
 
   /**
+   * @var string|null
+   */
+  protected ?string $currentLanguage = null;
+
+  /**
    * @param EventDispatcherInterface $dispatcher
    * @param DomainInterface $domain
    * @param EntityManagerORMInterface $entityManager
    * @param UrlParameterEntityManager $urlParameterEntityManager
    * @param UrlParameterMigrate $urlParameterMigrate
+   * @param string $currentLanguage
    * @param array $entitiesMapping
    * @param array $keysForObjectLink
    */
@@ -152,6 +157,7 @@ class UrlParametersByDomain
     EntityManagerORMInterface $entityManager,
     UrlParameterEntityManager $urlParameterEntityManager,
     UrlParameterMigrate $urlParameterMigrate,
+    string $currentLanguage,
     array $entitiesMapping = array(),
     array $keysForObjectLink = array()
   )
@@ -164,6 +170,7 @@ class UrlParametersByDomain
     $this->entitiesMapping = $entitiesMapping;
     $this->keysForObjectLink = $keysForObjectLink;
     $this->debugContainer = self::class;
+    $this->currentLanguage = $currentLanguage;
     $this->isVirtual = $this->domain->getIsVirtual();
   }
 
@@ -563,7 +570,7 @@ class UrlParametersByDomain
 
       /** @var UrlParameterInterface|EntityInterface $urlParameter */
       $urlParameter = $this->urlParameterEntityManager->duplicate($urlParameterSource);
-      $urlParameter->setLanguage($this->domain->getCurrentLanguage());
+      $urlParameter->setLanguage($this->currentLanguage);
 
       $uniqueKey = null;
       if($urlParameter->getDomainId() === $urlParameterSource->getDomainId())
@@ -744,7 +751,7 @@ class UrlParametersByDomain
     if(!$urlParameter->getIsVirtual())
     {
       // TODO Check for 1 domain with multi language
-      $urlParameter->setLanguage($this->domain->getCurrentLanguage());
+      $urlParameter->setLanguage($this->currentLanguage);
 
       $this->generatePathLast($urlParameter);
       $this->generatePathUrlParameter($urlParameter, $object);

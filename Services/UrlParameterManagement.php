@@ -207,7 +207,7 @@ class UrlParameterManagement
     }
 
     // TODO Check for 1 domain with multi language
-    $urlsParametersAll = $this->entityManager->getRepository(UrlParameterInterface::class)->selectUrlsParameters();
+    $urlsParametersAll = $this->entityManager->getRepository(UrlParameterInterface::class)->selectUrlsParameters($this->domainsManagement->getCurrentLanguage());
     /** @var UrlParameterInterface $urlParameter */
     foreach ($urlsParametersAll as $urlParameter)
     {
@@ -261,6 +261,7 @@ class UrlParameterManagement
         $this->entityManager,
         $this->urlParameterEntityManager,
         $this->urlParameterMigrate,
+        $this->domainsManagement->getCurrentLanguage(),
         $entitiesMappingForAllDomain,
         $keysForObjectLinkForAllDomain
       ))->build($urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS]);
@@ -285,6 +286,7 @@ class UrlParameterManagement
       $this->entityManager,
       $this->urlParameterEntityManager,
       $this->urlParameterMigrate,
+      $this->domainsManagement->getCurrentLanguage(),
       $this->entitiesMapping,
       $this->keysForObjectLink
     ))->build(AustralTools::getValueByKey($urlParametersEntityByDomain, $domain->getId(), array()));
