@@ -14,8 +14,10 @@ use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Services\UrlParameterManagement;
+use Austral\ToolsBundle\AustralTools;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\RouterInterface;
 
 /**
  * Austral AustralRouting.
@@ -25,9 +27,9 @@ use Symfony\Component\Routing\RequestContext;
 class AustralRouting
 {
   /**
-   * @var UrlGeneratorInterface
+   * @var RouterInterface
    */
-  private UrlGeneratorInterface $generator;
+  private RouterInterface $router;
 
   /**
    * @var UrlParameterManagement
@@ -42,13 +44,13 @@ class AustralRouting
   /**
    * UrlParameterMigrate constructor.
    *
-   * @param UrlGeneratorInterface $generator
+   * @param RouterInterface $router
    * @param DomainsManagement $domainsManagement
    * @param UrlParameterManagement $urlParameterManagement
    */
-  public function __construct(UrlGeneratorInterface $generator, DomainsManagement $domainsManagement, UrlParameterManagement $urlParameterManagement)
+  public function __construct(RouterInterface $router, DomainsManagement $domainsManagement, UrlParameterManagement $urlParameterManagement)
   {
-    $this->generator = $generator;
+    $this->router = $router;
     $this->urlParameterManagement = $urlParameterManagement;
     $this->domainsManagement = $domainsManagement;
   }
@@ -90,8 +92,14 @@ class AustralRouting
    *
    * @return string
    */
-  public function generate(string $route, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
+  public function generate(string $routeName, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
   {
+    $slugIsRequired = false;
+    if($route = $this->router->getRouteCollection()->get($routeName))
+    {
+      $slugIsRequired = $route->hasRequirement("slug");
+    }
+
     $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain()->getId() : $domainId;
     if($object)
     {
@@ -105,21 +113,19 @@ class AustralRouting
       }
       if($urlParameter) {
         $domainId = $urlParameter->getDomainId();
-        $parameters["slug"] = $urlParameter->getPath();
+        if($slugIsRequired) {
+          $parameters["slug"] = $urlParameter->getPath();
+        }
       }
     }
 
     /** @var RequestContext $requestContext */
     $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainId);
-    if($requestContext && $requestContext->getHost() !== $this->generator->getContext()->getHost())
+    if($requestContext && $requestContext->getHost() !== $this->router->getContext()->getHost())
     {
-      $this->generator->setContext($requestContext);
+      $this->router->setContext($requestContext);
     }
-    if(array_key_exists("slug", $parameters) && $parameters["slug"])
-    {
-      return $this->generator->generate($route, $parameters, $referenceType);
-    }
-    return "#";
+    return $this->router->generate($routeName, $parameters, $referenceType);
   }
 
 
