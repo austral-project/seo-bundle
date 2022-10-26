@@ -799,10 +799,12 @@ class UrlParameterManagement
    */
   protected function recoveryValuesAustral30(UrlParametersByDomain $urlParametersByDomain, EntityInterface $object): UrlParameterManagement
   {
-    $urlParameter = $urlParametersByDomain->getUrlParameterByObject($object);
-    $this->urlParameterMigrate->recoverySeoValues($urlParameter, $object);
-    $this->urlParameterMigrate->recoveryRobotValues($urlParameter, $object);
-    $this->urlParameterMigrate->recoverySocialValues($urlParameter, $object);
+    if($urlParameter = $urlParametersByDomain->getUrlParameterByObject($object))
+    {
+      $this->urlParameterMigrate->recoverySeoValues($urlParameter, $object);
+      $this->urlParameterMigrate->recoveryRobotValues($urlParameter, $object);
+      $this->urlParameterMigrate->recoverySocialValues($urlParameter, $object);
+    }
     return $this;
   }
 

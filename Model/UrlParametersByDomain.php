@@ -641,7 +641,7 @@ class UrlParametersByDomain
   /**
    * @param EntityInterface $object
    *
-   * @return UrlParameterInterface
+   * @return UrlParameterInterface|EntityInterface
    */
   public function recoveryOrCreateUrlParameterByObject(EntityInterface $object): UrlParameterInterface
   {
@@ -880,9 +880,12 @@ class UrlParametersByDomain
 
 
   /**
+   * @param UrlParameterInterface|EntityInterface $urlParameter
+   * @param EntityInterface $object
+   *
    * @return $this
    */
-  protected function recoveryValuesAustral30(UrlParameter $urlParameter, EntityInterface $object): UrlParametersByDomain
+  protected function recoveryValuesAustral30(UrlParameterInterface $urlParameter, EntityInterface $object): UrlParametersByDomain
   {
     $this->urlParameterMigrate->recoveryRefUrlPathValue($urlParameter, $object);
     $this->urlParameterMigrate->recoverySeoValues($urlParameter, $object);

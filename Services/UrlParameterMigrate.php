@@ -17,7 +17,7 @@ use Austral\EntityBundle\Entity\Interfaces\SocialNetworkInterface;
 use Austral\EntityBundle\Mapping\Mapping;
 use Austral\EntityFileBundle\File\Compression\Compression;
 use Austral\EntityFileBundle\File\Mapping\FieldFileMapping;
-use Austral\SeoBundle\Entity\UrlParameter;
+use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\ToolsBundle\AustralTools;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -53,12 +53,12 @@ class UrlParameterMigrate
   }
 
   /**
-   * @param UrlParameter $urlParameter
+   * @param UrlParameterInterface|EntityInterface $urlParameter
    * @param EntityInterface $object
    *
    * @return $this
    */
-  public function recoveryRefUrlPathValue(UrlParameter $urlParameter, EntityInterface $object): UrlParameterMigrate
+  public function recoveryRefUrlPathValue(UrlParameterInterface $urlParameter, EntityInterface $object): UrlParameterMigrate
   {
     /* Retreive refUrlLast Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
     if($object instanceof SeoInterface && $urlParameter->getIsCreate())
@@ -70,12 +70,12 @@ class UrlParameterMigrate
   }
 
   /**
-   * @param UrlParameter $urlParameter
+   * @param UrlParameterInterface|EntityInterface $urlParameter
    * @param EntityInterface $object
    *
    * @return $this
    */
-  public function recoverySeoValues(UrlParameter $urlParameter, EntityInterface $object): UrlParameterMigrate
+  public function recoverySeoValues(UrlParameterInterface $urlParameter, EntityInterface $object): UrlParameterMigrate
   {
     /* Retreive value if SeoInterface Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
     if($object instanceof SeoInterface && $urlParameter->getIsCreate())
@@ -88,12 +88,12 @@ class UrlParameterMigrate
   }
 
   /**
-   * @param UrlParameter $urlParameter
+   * @param UrlParameterInterface|EntityInterface $urlParameter
    * @param EntityInterface $object
    *
    * @return $this
    */
-  public function recoveryRobotValues(UrlParameter $urlParameter, EntityInterface $object): UrlParameterMigrate
+  public function recoveryRobotValues(UrlParameterInterface $urlParameter, EntityInterface $object): UrlParameterMigrate
   {
     /* Retreive value if RobotInterface Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
     if($object instanceof RobotInterface && $urlParameter->getIsCreate())
@@ -107,12 +107,12 @@ class UrlParameterMigrate
   }
 
   /**
-   * @param UrlParameter $urlParameter
+   * @param UrlParameterInterface|EntityInterface $urlParameter
    * @param EntityInterface $object
    *
    * @return $this
    */
-  public function recoverySocialValues(UrlParameter $urlParameter, EntityInterface $object): UrlParameterMigrate
+  public function recoverySocialValues(UrlParameterInterface $urlParameter, EntityInterface $object): UrlParameterMigrate
   {
     try {
       /* Retreive value if RobotInterface Austral 3.0 who is deprecated in Austral 3.1, this check will be removed in a future release */
