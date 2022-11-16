@@ -662,6 +662,7 @@ class UrlParametersByDomain
   {
     $urlParameter = $this->urlParameterEntityManager->create();
     $urlParameter->setObjectRelation("{$object->getClassnameForMapping()}::{$object->getId()}");
+    $urlParameter->setObjectKeyname("{$object->getKeyname()}");
     $urlParameter->setObject($object);
     $urlParameter->setDomainId($this->domain->getId());
     $urlParameter->setDomain($this->domain);
@@ -835,6 +836,7 @@ class UrlParametersByDomain
       }
       $pathLastGenerate = $object->$methodToGeneratePath();
       $urlParameter->setName($object->$methodUrlName());
+      $urlParameter->setObjectKeyname("{$object->getKeyname()}");
     }
     else
     {

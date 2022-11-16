@@ -109,6 +109,12 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
 
   /**
    * @var string|null
+   * @ORM\Column(name="object_keyname", type="string", length=255, nullable=true )
+   */
+  protected ?string $objectKeyname = null;
+
+  /**
+   * @var string|null
    * @ORM\Column(name="object_relation", type="string", length=255, nullable=true )
    */
   protected ?string $objectRelation = null;
@@ -417,6 +423,25 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   public function setSocialImage(?string $socialImage): UrlParameter
   {
     $this->socialImage = $socialImage;
+    return $this;
+  }
+
+  /**
+   * @return string|null
+   */
+  public function getObjectKeyname(): ?string
+  {
+    return $this->objectKeyname;
+  }
+
+  /**
+   * @param string|null $objectKeyname
+   *
+   * @return UrlParameter
+   */
+  public function setObjectKeyname(?string $objectKeyname): UrlParameter
+  {
+    $this->objectKeyname = $objectKeyname;
     return $this;
   }
 

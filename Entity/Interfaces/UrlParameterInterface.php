@@ -142,6 +142,18 @@ interface UrlParameterInterface
   /**
    * @return string|null
    */
+  public function getObjectKeyname(): ?string;
+
+  /**
+   * @param string|null $objectKeyname
+   *
+   * @return UrlParameterInterface
+   */
+  public function setObjectKeyname(?string $objectKeyname): UrlParameterInterface;
+
+  /**
+   * @return string|null
+   */
   public function getObjectRelation(): ?string;
 
   /**
