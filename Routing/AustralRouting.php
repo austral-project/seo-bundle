@@ -114,12 +114,7 @@ class AustralRouting
       if($urlParameter) {
         $domainId = $urlParameter->getDomainId();
         if($slugIsRequired) {
-          if($urlParameter->getPath()) {
-            $parameters["slug"] = $urlParameter->getPath();
-          }
-          else {
-            return "error-slug";
-          }
+          $parameters["slug"] = $urlParameter->getPath();
         }
       }
     }
@@ -130,7 +125,7 @@ class AustralRouting
     {
       $this->router->setContext($requestContext);
     }
-    if($slugIsRequired && (array_key_exists("slug", $parameters) || !$parameters["slug"])) {
+    if($slugIsRequired && (!array_key_exists("slug", $parameters) || !$parameters["slug"])) {
       return "";
     }
     return $this->router->generate($routeName, $parameters, $referenceType);
