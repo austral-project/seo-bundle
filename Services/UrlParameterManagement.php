@@ -389,6 +389,16 @@ class UrlParameterManagement
         /** @var UrlParameterInterface $urlParameter */
         $urlParameter = $urlParametersByDomain->getUrlParameterByObjectClassnameAndId($objectClassname, $objectId);
       }
+      if(!$urlParameter) {
+        /** @var UrlParametersByDomain $urlParametersByDomain */
+        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomain)
+        {
+          if($urlParameter = $urlParametersByDomain->getUrlParameterByObjectClassnameAndId($objectClassname, $objectId))
+          {
+            break;
+          }
+        }
+      }
     }
     return $urlParameter;
   }
