@@ -60,12 +60,17 @@ class EntityManagerListener
    */
   public function generateUrlParameter(EntityManagerEvent $entityManagerEvent)
   {
-    if($this->isCreateDomain && $entityManagerEvent->getObject() instanceof DomainInterface)
+    $object = $entityManagerEvent->getObject();
+    if($this->isCreateDomain && $object instanceof DomainInterface)
     {
       /** @var DomainInterface $domain */
       $domain = $entityManagerEvent->getObject();
       $this->urlParametersManagement->addUrlParametersByDomain($domain)
         ->generateAllUrlParameters($domain->getId());
+    }
+    else if(!$object instanceof UrlParameterInterface && $this->urlParametersManagement->hasEntityMappingByObjectClassname($object->getClassnameForMapping()))
+    {
+      $this->urlParametersManagement->generateUrlParameter($object);
     }
   }
 
