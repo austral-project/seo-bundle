@@ -143,6 +143,7 @@ class FormListener
 
         $formEvent->getFormMapper()
           ->addFieldset("fieldset.right")
+            ->setPositionName(Fieldset::POSITION_RIGHT)
             ->add(Field\ChoiceField::create("status",
                 array(
                   "choices.status.".UrlParameterInterface::STATUS_UNPUBLISHED   =>  array(
