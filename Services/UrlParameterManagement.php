@@ -286,7 +286,7 @@ class UrlParameterManagement
       $this->entityManager,
       $this->urlParameterEntityManager,
       $this->urlParameterMigrate,
-      $this->domainsManagement->getCurrentLanguage(),
+      $domain->getCurrentLanguage(),
       $this->entitiesMapping,
       $this->keysForObjectLink
     ))->build(AustralTools::getValueByKey($urlParametersEntityByDomain, $domain->getId(), array()));
