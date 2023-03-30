@@ -506,7 +506,7 @@ class UrlParametersByDomain
     $this->domainIdByUrlParameterId[$urlParameter->getId()] = $this->domain->getId();
     $this->nameByKeyLinks[$urlParameter->getKeyLink()] = $urlParameter->getName();
 
-    if($urlParameter->getObjectRelation())
+    if($urlParameter->getObjectRelation() && !$urlParameter->getIsVirtual())
     {
       $this->objectsMapping["{$urlParameter->getObjectRelation()}"] = $urlParameter->getObject();
       $this->pathByKeyLinks[$urlParameter->getObjectRelation()] = $urlParameter->getPath();
