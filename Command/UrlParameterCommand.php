@@ -11,7 +11,9 @@
 namespace Austral\SeoBundle\Command;
 
 use Austral\HttpBundle\Services\DomainsManagement;
+use Austral\SeoBundle\Entity\UrlParameter;
 use Austral\SeoBundle\EntityManager\UrlParameterEntityManager;
+use Austral\SeoBundle\Model\UrlParametersByDomain;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Austral\ToolsBundle\Command\Base\Command;
 use Doctrine\DBAL\Driver\PDO\MySQL\Driver;
@@ -51,7 +53,8 @@ class UrlParameterCommand extends Command
   {
     $this
       ->setDefinition([
-        new InputOption('--clean', '-c', InputOption::VALUE_NONE, 'Delete all UrlParameters'),
+        new InputOption('--clean-all', '', InputOption::VALUE_NONE, 'Delete all UrlParameters'),
+        new InputOption('--clean', '-c', InputOption::VALUE_NONE, 'Delete orphan UrlParameters'),
         new InputOption('--generate', '-g', InputOption::VALUE_NONE, 'Generate automatically UrlParameters'),
         new InputOption('--domain', "", InputOption::VALUE_REQUIRED, 'Domain Id'),
       ])
@@ -59,6 +62,7 @@ class UrlParameterCommand extends Command
       ->setHelp(<<<'EOF'
 The <info>%command.name%</info> command to generate Urls Parameters
 
+  <info>php %command.full_name% --clean-all</info>
   <info>php %command.full_name% --clean</info>
   <info>php %command.full_name% --generate</info>
   <info>php %command.full_name% --generate --domain ID</info>
@@ -83,7 +87,7 @@ EOF
 
     $this->urlParameterEntityManager = $this->container->get("austral.entity_manager.url_parameter");
     $domainId = $input->getOption("domain");
-    if($input->getOption("clean"))
+    if($input->getOption("clean-all"))
     {
       if($domainId)
       {
@@ -117,6 +121,36 @@ EOF
           $connection->rollback();
           $this->viewMessage("UrlParameters Clean error -> {$e->getMessage()} !!!", "error");
         }
+      }
+    }
+    if($input->getOption("clean"))
+    {
+      /** @var DomainsManagement $domainsManagement */
+      $domainsManagement = $this->container->get('austral.http.domains.management');
+      $domainsManagement->initialize();
+
+      /** @var UrlParameterManagement $urlParameterManagement */
+      $urlParameterManagement = $this->container->get('austral.seo.url_parameter.management')->initialize();
+
+      $urlParametersToDelete = array();
+      foreach ($domainsManagement->getDomains() as $domain)
+      {
+        $domainsManagement->setCurrentDomain($domain);
+        $urlParameterManagement->refresh()->hydrateObjects();
+
+        $urlParametersByDomain = $urlParameterManagement->getUrlParametersByDomain($domain->getId());
+        /** @var UrlParameter $urlParameter */
+        foreach ($urlParametersByDomain->getUrlParameters() as $urlParameter)
+        {
+          if(!$urlParameter->getObject() && !$urlParameter->getIsVirtual())
+          {
+            $urlParametersToDelete[] = $urlParameter;
+          }
+        }
+      }
+      if($urlParametersToDelete)
+      {
+        $this->urlParameterEntityManager->deletes($urlParametersToDelete);
       }
     }
     if($input->getOption("generate"))
