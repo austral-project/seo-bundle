@@ -138,13 +138,15 @@ EOF
         $domainsManagement->setCurrentDomain($domain);
         $urlParameterManagement->refresh()->hydrateObjects();
 
-        $urlParametersByDomain = $urlParameterManagement->getUrlParametersByDomain($domain->getId());
-        /** @var UrlParameter $urlParameter */
-        foreach ($urlParametersByDomain->getUrlParameters() as $urlParameter)
+        if($urlParametersByDomain = $urlParameterManagement->getUrlParametersByDomain($domain->getId()))
         {
-          if(!$urlParameter->getObject() && !$urlParameter->getIsVirtual())
+          /** @var UrlParameter $urlParameter */
+          foreach ($urlParametersByDomain->getUrlParameters() as $urlParameter)
           {
-            $urlParametersToDelete[] = $urlParameter;
+            if(!$urlParameter->getObject() && !$urlParameter->getIsVirtual())
+            {
+              $urlParametersToDelete[] = $urlParameter;
+            }
           }
         }
       }
