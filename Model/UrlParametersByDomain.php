@@ -270,12 +270,15 @@ class UrlParametersByDomain
   {
     foreach($values as $key => $value)
     {
-      $urlParameter = $this->getUrlParameterById($value["element"]);
-      if($urlParameter && $urlParameter->getIsTreeView())
+      if(array_key_exists("element", $value))
       {
-        $urlsByDomainWithTree[$key]["urlParameter"] = $urlParameter;
-        unset($value["element"]);
-        $urlsByDomainWithTree[$key]["children"] = $this->treeParse($value);
+        $urlParameter = $this->getUrlParameterById($value["element"]);
+        if($urlParameter && $urlParameter->getIsTreeView())
+        {
+          $urlsByDomainWithTree[$key]["urlParameter"] = $urlParameter;
+          unset($value["element"]);
+          $urlsByDomainWithTree[$key]["children"] = $this->treeParse($value);
+        }
       }
     }
     return $urlsByDomainWithTree;
