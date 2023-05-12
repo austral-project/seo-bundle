@@ -10,10 +10,14 @@
 
 namespace Austral\SeoBundle\Column;
 
+use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\EntityBundle\Entity\Interfaces\TranslateChildInterface;
+use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\ListBundle\Column\Action;
 use Austral\ListBundle\Column\Base\ColumnWithPath;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
+use Austral\SeoBundle\Entity\Traits\UrlParameterTrait;
 use Austral\ToolsBundle\AustralTools;
 
 /**
@@ -43,6 +47,11 @@ class UrlParameterStatus extends ColumnWithPath
    * @var string
    */
   protected string $domainId;
+
+  /**
+   * @var array
+   */
+  protected array $values = array();
 
   /**
    * Choices constructor.
@@ -143,12 +152,23 @@ class UrlParameterStatus extends ColumnWithPath
   }
 
   /**
-   * @param $object
+   * @param EntityInterface|UrlParameterTrait $object
    *
    * @return mixed|null
    */
   public function getter($object)
   {
+    if($object instanceof TranslateMasterInterface)
+    {
+      $urlParametersStatus = array();
+      /** @var TranslateChildInterface $translate */
+      foreach ($object->getTranslates() as $translate)
+      {
+        $urlParameter = $object->getUrlParameter($this->domainId, $translate->getLanguage());
+        $urlParametersStatus[$translate->getLanguage()] = $urlParameter ? $urlParameter->getStatus() : null;
+      }
+      return $urlParametersStatus;
+    }
     $urlParameter = $object->getUrlParameter($this->domainId);
     return $urlParameter ? $urlParameter->getStatus() : null;
   }

@@ -58,7 +58,7 @@ class UrlConflictAdmin extends Admin
     /** @var UrlParameterEntityManager $urlParameterEntityManager */
     $urlParameterEntityManager = $this->container->get('austral.entity_manager.url_parameter');
 
-    $forms = array();
+    $formsByLanguages = array();
 
     $formsIsValide = true;
     $request = $listAdminEvent->getRequest();
@@ -69,84 +69,93 @@ class UrlConflictAdmin extends Admin
     /** @var Modules $modules */
     $modules = $this->container->get('austral.admin.modules');
 
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach($urlParameterManagement->getUrlParametersByDomains() as $urlParametersByDomain)
+    /** @var array $urlParametersByDomainAndLanguages */
+    foreach($urlParameterManagement->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      foreach($urlParametersByDomain->getUrlParametersConflict() as $urlConflict => $urlParameterIds)
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach($urlParametersByDomainAndLanguages as $language => $urlParametersByDomain)
       {
-        foreach($urlParameterIds as $urlParameterId)
+        $forms = array();
+        foreach($urlParametersByDomain->getUrlParametersConflict() as $urlConflict => $urlParameterIds)
         {
-          $urlParameter = $urlParametersByDomain->getUrlParameterById($urlParameterId);
-          $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass());
-          /** @var EntityMapping $entityMapping */
-          if($entityMapping = $urlParametersByDomain->getEntityMappingByObjectClassname($urlParameter->getObjectClass()))
+          foreach($urlParameterIds as $urlParameterId)
           {
-            /** @var DomainFilterMapping $domainFilter */
-            if($domainFilter = $entityMapping->getEntityClassMapping(DomainFilterMapping::class))
+            $urlParameter = $urlParametersByDomain->getUrlParameterById($urlParameterId);
+            $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass());
+            /** @var EntityMapping $entityMapping */
+            if($entityMapping = $urlParametersByDomain->getEntityMappingByObjectClassname($urlParameter->getObjectClass()))
             {
-              if($domainFilter->getAutoDomainId())
+              /** @var DomainFilterMapping $domainFilter */
+              if($domainFilter = $entityMapping->getEntityClassMapping(DomainFilterMapping::class))
               {
-                $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $urlParameter->getDomainId() ?? DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS);
+                if($domainFilter->getAutoDomainId())
+                {
+                  $moduleObject = $modules->getModuleByEntityClassname($urlParameter->getObjectClass(), $urlParameter->getDomainId() ?? DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS);
+                }
               }
             }
-          }
 
-          $formMapper = new FormMapper($this->container->get('event_dispatcher'));
-          $formMapper->setObject($urlParameter)
-            ->setName("form_{$urlParameter->getId()}")
-            ->setFormTypeAction("edit")
-            ->setTranslateDomain("austral");
-          if($moduleObject)
-          {
-            $formMapper->setModule($moduleObject);
-          }
-          $formMapperMaster->addSubFormMapper("form_{$urlParameter->getId()}", $formMapper);
+            $formMapper = new FormMapper($this->container->get('event_dispatcher'));
+            $formMapper->setObject($urlParameter)
+              ->setName("form_{$urlParameter->getId()}")
+              ->setFormTypeAction("edit")
+              ->setTranslateDomain("austral");
+            if($moduleObject)
+            {
+              $formMapper->setModule($moduleObject);
+            }
+            $formMapperMaster->addSubFormMapper("form_{$urlParameter->getId()}", $formMapper);
 
-          /** @var FormTypeInterface $formType */
-          $formType = clone $this->container->get('austral.form.type.master')
-            ->setClass(ClassUtils::getClass($urlParameter))
-            ->setFormMapper($formMapperMaster);
+            /** @var FormTypeInterface $formType */
+            $formType = clone $this->container->get('austral.form.type.master')
+              ->setClass(ClassUtils::getClass($urlParameter))
+              ->setFormMapper($formMapperMaster);
 
 
-          $formMapper->add(new PathField("pathLast", array(
-                "entitled"  =>  "fields.pathLast.entitled",
-                "attr"      =>  array(
-                  "autocomplete"  =>  "off"
-                ),
-                "template"  =>  array(
-                  "vars"  =>  array(
-                    "urlParameter"  =>  $urlParameter
+            $formMapper->add(new PathField("pathLast", array(
+                  "entitled"  =>  "fields.pathLast.entitled",
+                  "attr"      =>  array(
+                    "autocomplete"  =>  "off"
+                  ),
+                  "template"  =>  array(
+                    "vars"  =>  array(
+                      "urlParameter"  =>  $urlParameter
+                    )
                   )
                 )
               )
-            )
-          );
+            );
 
-          $form = $this->container->get('form.factory')->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
-          if($request->getMethod() == 'POST')
-          {
-            $form->handleRequest($request);
-            if($form->isSubmitted()) {
+            $form = $this->container->get('form.factory')->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
+            if($request->getMethod() == 'POST')
+            {
+              $form->handleRequest($request);
+              if($form->isSubmitted()) {
 
-              $formMapper->setObject($form->getData());
-              if($form->isValid() && $this->module->getAdmin()->formIsValidate())
-              {
-                $urlParameterEntityManager->update($formMapper->getObject(), false);
-              }
-              else
-              {
-                $formsIsValide = false;
-                $formMapper->setFormStatus("error");
+                $formMapper->setObject($form->getData());
+                if($form->isValid() && $this->module->getAdmin()->formIsValidate())
+                {
+                  $urlParameterEntityManager->update($formMapper->getObject(), false);
+                }
+                else
+                {
+                  $formsIsValide = false;
+                  $formMapper->setFormStatus("error");
+                }
               }
             }
+            $forms[] = array(
+              "mapper"        =>  $formMapper,
+              "form"          =>  $form,
+              "view"          =>  $form->createView(),
+              "groupElement"  =>  "{$urlParametersByDomain->getDomain()->getId()}.{$urlConflict}"
+            );
           }
-          $forms[] = array(
-            "mapper"        =>  $formMapper,
-            "form"          =>  $form,
-            "view"          =>  $form->createView(),
-            "groupElement"  =>  "{$urlParametersByDomain->getDomain()->getId()}.{$urlConflict}"
-          );
         }
+        $formsByLanguages[] = array(
+          "title" =>  "{$urlParametersByDomain->getDomain()->getDomain()} - {$language}",
+          "forms" =>  $forms
+        );
       }
     }
 
@@ -181,12 +190,12 @@ class UrlConflictAdmin extends Admin
 
     $listAdminEvent->getTemplateParameters()->setPath("@AustralSeo/Admin/Module/seo.html.twig");
     $listAdminEvent->getTemplateParameters()->addParameters("list", array(
-      "forms"       =>  $forms,
-      "formSend"    =>  $formSend,
-      "formStatus"  =>  $formStatus,
-      "type"        =>  "seo-url",
-      "viewDomain"  =>  true,
-      "editObject"  =>  true
+      "formsByLanguages"    =>  $formsByLanguages,
+      "formSend"            =>  $formSend,
+      "formStatus"          =>  $formStatus,
+      "type"                =>  "seo-url",
+      "viewDomain"          =>  true,
+      "editObject"          =>  true
     ));
   }
 

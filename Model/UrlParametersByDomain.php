@@ -12,6 +12,7 @@ namespace Austral\SeoBundle\Model;
 
 use App\Entity\Austral\SeoBundle\UrlParameter;
 use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
 use Austral\EntityBundle\EntityManager\EntityManagerORMInterface;
 use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\HttpBundle\Services\DomainsManagement;
@@ -754,8 +755,14 @@ class UrlParametersByDomain
     $urlParameter = $this->recoveryOrCreateUrlParameterByObject($object);
     if(!$urlParameter->getIsVirtual())
     {
-      // TODO Check for 1 domain with multi language
-      $urlParameter->setLanguage($this->currentLanguage);
+      if($object instanceof TranslateMasterInterface)
+      {
+        $urlParameter->setLanguage($object->getLanguageCurrent());
+      }
+      else
+      {
+        $urlParameter->setLanguage($this->currentLanguage);
+      }
 
       $this->generatePathLast($urlParameter);
       $this->generatePathUrlParameter($urlParameter, $object);

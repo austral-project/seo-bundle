@@ -60,107 +60,115 @@
         <div class="row">
           <div class="col col--xs-12">
             <div id="seo-editor-refresh">
-              <ul class="forms-seo-content form-container {{ list.type }}">
-                {% set groupElement = null %}
-                {% for form in list.forms %}
-                  {% set groupElementSeparate = null %}
-                  {% if groupElement != form.groupElement %}
-                    {% if groupElement is not null %}
-                      {% set groupElementSeparate = "separate-form" %}
-                    {% endif %}
-                    {% set groupElement = form.groupElement %}
-                  {% endif %}
+              {% set groupElement = null %}
+              {% for formsByLanguage in list.formsByLanguages %}
+                {% if formsByLanguage.forms|length > 0 %}
+                  <h2 class="title title-by-language">SEO - {{ formsByLanguage.title }}</h2>
 
-                  <li id="form-object-{{ form.mapper.object.id }}" class="{{ groupElementSeparate }}">
-                    <div class="content-object" data-toggle-container="#content-object-fields-{{ form.mapper.object.id }}">
-                      <div class="content-infos">
-                        <span class="status status-{{ form.mapper.object.status }}"></span>
-                        <span class="title font-poppins-m-14">{{ form.mapper.object.seoH1() ?? form.mapper.object.__toString() }}</span>
-                        {% if list.type == "seo-url" or list.type == "seo-all" %}
-                          <span class="info info-url font-poppins-m-11-grey">{{ form.mapper.object.seoTitle ?? form.mapper.object.__toString() }}</span>
-                        {% elseif list.type == "seo-title" %}
-                          <span class="info info-url font-poppins-m-11-grey">../{{ form.mapper.object.pathLast }}</span>
-                        {% endif %}
-                        {% if list.viewDomain is defined and list.viewDomain %}
-                          <span class="info info-url pdt5 font-poppins-m-11-grey">{{ form.mapper.object.domain.domain }}</span>
-                        {% endif %}
-                        {% if list.type == "seo-all" or (list.editObject is defined and list.editObject) %}
+                  <ul class="forms-seo-content form-container {{ list.type }}">
 
-                          {{ include("@AustralDesign/Components/Button/picto.html.twig",
-                            {
-                              tag:            "a",
-                              url:            path("austral_admin_module_form_edit", {modulePath: form.mapper.module.modulePath, id: form.mapper.object.objectId}),
-                              withEntitled:   true,
-                              reverse:        true,
-                              title:          "actions.edit"|trans({}, "austral"),
-                              picto:          "austral-picto-corner-forward",
-                              data: {
-                                target: "_blank",
-                                "data-no-click-actions": ""
-                              }
-                            }
-                          ) }}
+
+                    {% for form in formsByLanguage.forms %}
+                      {% set groupElementSeparate = null %}
+                      {% if groupElement != form.groupElement %}
+                        {% if groupElement is not null %}
+                          {% set groupElementSeparate = "separate-form" %}
                         {% endif %}
-                      </div>
-                      {% if list.type == "seo-all" %}
-                        <div class="fields-content" data-no-click-actions="">
-                          {% for field in form.mapper.allFields %}
-                            {% if field is instanceof("Austral\\FormBundle\\Field\\TemplateField") and field.fieldname == "googleVisualisation" %}
-                              {{ include(field.templatePath, {field: field}) }}
-                            {% endif %}
-                          {% endfor %}
-                        </div>
-                      {% else %}
-                        <div class="fields-content">
-                          {% for field in form.mapper.allFields %}
-                            {% if field is instanceof("Austral\\FormBundle\\Field\\TemplateField") %}
-                              {{ include(field.templatePath, {field: field}) }}
-                            {% else %}
-                              {% include '@AustralAdmin/Form/Components/field.html.twig' with {
-                                field: {
-                                  name:         field.fieldname(),
-                                  type:         field,
-                                  required:     field.required(),
-                                  input:        form_widget(form.view[field.fieldname()]),
-                                  label:        form_label(form.view[field.fieldname()]),
-                                  errors:       form_errors(form.view[field.fieldname()]),
-                                },
-                                form:           form,
-                              } only %}
-                            {% endif %}
-                          {% endfor %}
-                        </div>
+                        {% set groupElement = form.groupElement %}
                       {% endif %}
-                    </div>
-                    {% if list.type == "seo-all" %}
-                      <div id="content-object-fields-{{ form.mapper.object.id }}" class="content-object-fields" data-toggle="" data-toggle-elements-add-class="#form-object-{{ form.mapper.object.id }}">
-                        <div class="fields-content">
-                          {% for field in form.mapper.allFields %}
-                            {% if field is instanceof("Austral\\FormBundle\\Field\\TemplateField") %}
-                              {% if field.fieldname != "googleVisualisation" %}
-                                {{ include(field.templatePath, {field: field}) }}
-                              {% endif %}
-                            {% else %}
-                              {% include '@AustralAdmin/Form/Components/field.html.twig' with {
-                                field: {
-                                  name:         field.fieldname(),
-                                  type:         field,
-                                  required:     field.required(),
-                                  input:        form_widget(form.view[field.fieldname()]),
-                                  label:        form_label(form.view[field.fieldname()]),
-                                  errors:       form_errors(form.view[field.fieldname()]),
-                                },
-                                form:           form,
-                              } only %}
+
+                      <li id="form-object-{{ form.mapper.object.id }}" class="{{ groupElementSeparate }}">
+                        <div class="content-object" data-toggle-container="#content-object-fields-{{ form.mapper.object.id }}">
+                          <div class="content-infos">
+                            <span class="status status-{{ form.mapper.object.status }}"></span>
+                            <span class="title font-poppins-m-14">{{ form.mapper.object.seoH1() ?? form.mapper.object.__toString() }}</span>
+                            {% if list.type == "seo-url" or list.type == "seo-all" %}
+                              <span class="info info-url font-poppins-m-11-grey">{{ form.mapper.object.seoTitle ?? form.mapper.object.__toString() }}</span>
+                            {% elseif list.type == "seo-title" %}
+                              <span class="info info-url font-poppins-m-11-grey">../{{ form.mapper.object.pathLast }}</span>
                             {% endif %}
-                          {% endfor %}
+                            {% if list.viewDomain is defined and list.viewDomain %}
+                              <span class="info info-url pdt5 font-poppins-m-11-grey">{{ form.mapper.object.domain.domain }}</span>
+                            {% endif %}
+                            {% if list.type == "seo-all" or (list.editObject is defined and list.editObject) %}
+
+                              {{ include("@AustralDesign/Components/Button/picto.html.twig",
+                                {
+                                  tag:            "a",
+                                  url:            path("austral_admin_module_form_edit", {modulePath: form.mapper.module.modulePath, id: form.mapper.object.objectId}),
+                                  withEntitled:   true,
+                                  reverse:        true,
+                                  title:          "actions.edit"|trans({}, "austral"),
+                                  picto:          "austral-picto-corner-forward",
+                                  data: {
+                                    target: "_blank",
+                                    "data-no-click-actions": ""
+                                  }
+                                }
+                              ) }}
+                            {% endif %}
+                          </div>
+                          {% if list.type == "seo-all" %}
+                            <div class="fields-content" data-no-click-actions="">
+                              {% for field in form.mapper.allFields %}
+                                {% if field is instanceof("Austral\\FormBundle\\Field\\TemplateField") and field.fieldname == "googleVisualisation" %}
+                                  {{ include(field.templatePath, {field: field}) }}
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          {% else %}
+                            <div class="fields-content">
+                              {% for field in form.mapper.allFields %}
+                                {% if field is instanceof("Austral\\FormBundle\\Field\\TemplateField") %}
+                                  {{ include(field.templatePath, {field: field}) }}
+                                {% else %}
+                                  {% include '@AustralAdmin/Form/Components/field.html.twig' with {
+                                    field: {
+                                      name:         field.fieldname(),
+                                      type:         field,
+                                      required:     field.required(),
+                                      input:        form_widget(form.view[field.fieldname()]),
+                                      label:        form_label(form.view[field.fieldname()]),
+                                      errors:       form_errors(form.view[field.fieldname()]),
+                                    },
+                                    form:           form,
+                                  } only %}
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          {% endif %}
                         </div>
-                      </div>
-                    {% endif %}
-                    {{ form_rest(form.view) }}
-                  </li>
-                {% endfor %}
-              </ul>
+                        {% if list.type == "seo-all" %}
+                          <div id="content-object-fields-{{ form.mapper.object.id }}" class="content-object-fields" data-toggle="" data-toggle-elements-add-class="#form-object-{{ form.mapper.object.id }}">
+                            <div class="fields-content">
+                              {% for field in form.mapper.allFields %}
+                                {% if field is instanceof("Austral\\FormBundle\\Field\\TemplateField") %}
+                                  {% if field.fieldname != "googleVisualisation" %}
+                                    {{ include(field.templatePath, {field: field}) }}
+                                  {% endif %}
+                                {% else %}
+                                  {% include '@AustralAdmin/Form/Components/field.html.twig' with {
+                                    field: {
+                                      name:         field.fieldname(),
+                                      type:         field,
+                                      required:     field.required(),
+                                      input:        form_widget(form.view[field.fieldname()]),
+                                      label:        form_label(form.view[field.fieldname()]),
+                                      errors:       form_errors(form.view[field.fieldname()]),
+                                    },
+                                    form:           form,
+                                  } only %}
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          </div>
+                        {% endif %}
+                        {{ form_rest(form.view) }}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              {% endfor %}
             </div>
           </div>
         </div>

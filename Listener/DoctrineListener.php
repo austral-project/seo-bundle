@@ -11,9 +11,13 @@
 namespace Austral\SeoBundle\Listener;
 
 use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\EntityBundle\Entity\Interfaces\TranslateChildInterface;
+use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
 use Austral\EntityBundle\Mapping\Mapping;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Entity\Redirection;
+use Austral\SeoBundle\Entity\Traits\UrlParameterTrait;
+use Austral\SeoBundle\Entity\UrlParameter;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
 use Austral\SeoBundle\Services\RedirectionManagement;
 use Austral\SeoBundle\Services\UrlParameterManagement;
@@ -88,11 +92,34 @@ class DoctrineListener implements EventSubscriber
    */
   public function postLoad(LifecycleEventArgs $args)
   {
-    /** @var EntityInterface $object */
+    /** @var EntityInterface|UrlParameterTrait $object */
     $object = $args->getObject();
     if($this->mapping->getEntityClassMapping($object->getClassnameForMapping(), UrlParameterMapping::class))
     {
-      $object->setUrlParameters($this->urlParametersManagement->getUrlParametersByObject($object));
+      $urlParameters = array();
+      if($object instanceof TranslateMasterInterface)
+      {
+        /** @var TranslateChildInterface $translate */
+        foreach ($object->getTranslates() as $translate)
+        {
+          $urlParametersSelected = $this->urlParametersManagement->getUrlParametersByObject($object, $translate->getLanguage());
+          /** @var UrlParameter $urlParameter */
+          foreach ($urlParametersSelected as $urlParameter)
+          {
+            $urlParameters[$urlParameter->getLanguage()][] = $urlParameter;
+          }
+        }
+      }
+      else
+      {
+        $urlParametersSelected = $this->urlParametersManagement->getUrlParametersByObject($object);
+        /** @var UrlParameter $urlParameter */
+        foreach ($urlParametersSelected as $urlParameter)
+        {
+          $urlParameters[$urlParameter->getLanguage()][] = $urlParameter;
+        }
+      }
+      $object->setUrlParameters($urlParameters);
     }
   }
 

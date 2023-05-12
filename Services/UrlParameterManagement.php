@@ -11,6 +11,7 @@
 namespace Austral\SeoBundle\Services;
 
 use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
 use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\EntityBundle\EntityManager\EntityManagerORMInterface;
 use Austral\EntityBundle\Mapping\EntityMapping;
@@ -24,6 +25,7 @@ use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Model\UrlParametersByDomain;
 use Austral\ToolsBundle\AustralTools;
 use Austral\ToolsBundle\Services\Debug;
+use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -65,9 +67,9 @@ class UrlParameterManagement
   protected UrlParameterMigrate $urlParameterMigrate;
 
   /**
-   * @var Debug
+   * @var Debug|null
    */
-  protected Debug $debug;
+  protected ?Debug $debug;
 
   /**
    * @var string
@@ -90,14 +92,24 @@ class UrlParameterManagement
   protected array $keysForObjectLink = array();
 
   /**
+   * @var string
+   */
+  protected string $currentLanguage;
+
+  /**
+   * @var array
+   */
+  protected array $languages = array();
+
+  /**
    * @var array
    */
   protected array $domainIdByUrlParameterId = array();
 
   /**
-   * @var UrlParametersByDomain|null
+   * @var array
    */
-  protected ?UrlParametersByDomain $urlParametersByDomainsForAll = null;
+  protected array $urlParametersByDomainsForAll = array();
 
 
   /**
@@ -115,7 +127,7 @@ class UrlParameterManagement
     UrlParameterEntityManager $urlParameterEntityManager,
     DomainsManagement $domainsManagement,
     UrlParameterMigrate $urlParameterMigrate,
-    Debug $debug
+    ?Debug $debug
   )
   {
     $this->mapping = $mapping;
@@ -126,6 +138,16 @@ class UrlParameterManagement
     $this->urlParameterMigrate = $urlParameterMigrate;
     $this->debug = $debug;
     $this->debugContainer = self::class;
+    $this->currentLanguage = $this->domainsManagement->getCurrentLanguage();
+
+    $this->languages = array(
+      $this->domainsManagement->getCurrentLanguage()
+    );
+    if($this->domainsManagement->getHttpRequest()->getMultiLanguages())
+    {
+      $this->languages = $this->domainsManagement->getHttpRequest()->getMultiLanguages();
+    }
+
   }
 
   /**
@@ -146,7 +168,7 @@ class UrlParameterManagement
    */
   public function initialize(bool $reload = false): UrlParameterManagement
   {
-    $this->debug->stopWatchStart("austral.url_parameter_management.initialize", $this->debugContainer);
+    $this->debug ? $this->debug->stopWatchStart("austral.url_parameter_management.initialize", $this->debugContainer) : null;
 
     $entitiesMappingForAllDomain = array();
     $urlPathWithLastPathForAllDomain = array();
@@ -193,49 +215,63 @@ class UrlParameterManagement
       }
     }
 
-    $this->debug->stopWatchStop("austral.url_parameter_management.initialize");
+    $this->debug ? $this->debug->stopWatchStop("austral.url_parameter_management.initialize") : null;
     $urlParametersEntityByDomain = array();
 
     /** @var DomainInterface $domain */
     foreach($this->domainsManagement->getDomainsWithoutVirtual() as $domain)
     {
-      $urlParametersEntityByDomain[$domain->getId()] = array();
+      foreach ($this->languages as $language)
+      {
+        $urlParametersEntityByDomain[$domain->getId()][$language] = array();
+      }
     }
     if($this->domainsManagement->getEnabledDomainWithoutVirtual())
     {
-      $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS] = array();
+      foreach ($this->languages as $language)
+      {
+        $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS][$language] = array();
+      }
     }
 
-    // TODO Check for 1 domain with multi language
-    $urlsParametersAll = $this->entityManager->getRepository(UrlParameterInterface::class)->selectUrlsParameters($this->domainsManagement->getCurrentLanguage());
-    /** @var UrlParameterInterface $urlParameter */
-    foreach ($urlsParametersAll as $urlParameter)
+    $urlsParametersAll = array();
+    foreach ($this->languages as $language)
     {
-      $urlParametersEntityByDomain[$urlParameter->getDomainId()][$urlParameter->getId()] = $urlParameter;
+      $urlsParametersAll[$language] = $this->entityManager->getRepository(UrlParameterInterface::class)->selectUrlsParameters($language);
+    }
 
-      if($this->domainsManagement->getEnabledDomainWithoutVirtual())
+    /** @var UrlParameterInterface $urlParameter */
+    foreach ($urlsParametersAll as $language => $urlParameters)
+    {
+      foreach($urlParameters as $urlParameter)
       {
-        if(array_key_exists($urlParameter->getObjectClass(), $entitiesMappingForAllDomain))
+        $urlParametersEntityByDomain[$urlParameter->getDomainId()][$language][$urlParameter->getId()] = $urlParameter;
+
+        if($this->domainsManagement->getEnabledDomainWithoutVirtual())
         {
-          $path = null;
-          if(in_array($urlParameter->getObjectClass(), $urlPathWithLastPathForAllDomain))
+          if(array_key_exists($urlParameter->getObjectClass(), $entitiesMappingForAllDomain))
           {
-            $path = $urlParameter->getPathLast();
-          }
-          elseif(array_key_exists($urlParameter->getObjectRelation(), $objectsForAllDomain))
-          {
-            $path = $urlParameter->getPath();
-          }
-          if($path && !array_key_exists($urlParameter->getPath(), $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS]))
-          {
-            $urlParameterForAllDomain = $this->urlParameterEntityManager->create();
-            $urlParameterForAllDomain->setId("{$urlParameter->getObjectClassShort()}_{$urlParameter->getObjectId()}");
-            $urlParameterForAllDomain->setIsVirtual(true);
-            $urlParameterForAllDomain->setName($urlParameter->getName());
-            $urlParameterForAllDomain->setPath($path);
-            $urlParameterForAllDomain->setPathLast($path);
-            $urlParameterForAllDomain->setObjectRelation($urlParameter->getObjectRelation());
-            $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS][$urlParameterForAllDomain->getId()] = $urlParameterForAllDomain;
+            $path = null;
+            if(in_array($urlParameter->getObjectClass(), $urlPathWithLastPathForAllDomain))
+            {
+              $path = $urlParameter->getPathLast();
+            }
+            elseif(array_key_exists($urlParameter->getObjectRelation(), $objectsForAllDomain))
+            {
+              $path = $urlParameter->getPath();
+            }
+            if($path && !array_key_exists($urlParameter->getPath(), $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS]))
+            {
+              $urlParameterForAllDomain = $this->urlParameterEntityManager->create();
+              $urlParameterForAllDomain->setId("{$urlParameter->getObjectClassShort()}_{$urlParameter->getObjectId()}");
+              $urlParameterForAllDomain->setIsVirtual(true);
+              $urlParameterForAllDomain->setName($urlParameter->getName());
+              $urlParameterForAllDomain->setPath($path);
+              $urlParameterForAllDomain->setPathLast($path);
+              $urlParameterForAllDomain->setLanguage($language);
+              $urlParameterForAllDomain->setObjectRelation($urlParameter->getObjectRelation());
+              $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS][$language] [$urlParameterForAllDomain->getId()]= $urlParameterForAllDomain;
+            }
           }
         }
       }
@@ -249,51 +285,148 @@ class UrlParameterManagement
     {
       if((!array_key_exists($domain->getId(), $this->urlParametersByDomains) && $domain->getId() !== DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS) || $reload)
       {
-        $this->addUrlParametersByDomain($domain, $urlParametersEntityByDomain);
+        foreach ($this->languages as $language)
+        {
+          $this->addUrlParametersByDomain($domain, $language, AustralTools::getValueByKey($urlParametersEntityByDomain, $domain->getId(), array()));
+        }
       }
     }
 
     if($this->domainsManagement->getEnabledDomainWithoutVirtual())
     {
-      $urlParametersByDomain = (new UrlParametersByDomain(
-        $this->dispatcher,
-        $this->domainsManagement->getDomainForAll(),
-        $this->entityManager,
-        $this->urlParameterEntityManager,
-        $this->urlParameterMigrate,
-        $this->domainsManagement->getCurrentLanguage(),
-        $entitiesMappingForAllDomain,
-        $keysForObjectLinkForAllDomain
-      ))->build($urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS]);
-      $this->urlParametersByDomainsForAll = $urlParametersByDomain;
+      foreach ($this->languages as $language)
+      {
+        $urlParametersByDomain = (new UrlParametersByDomain(
+          $this->dispatcher,
+          $this->domainsManagement->getDomainForAll(),
+          $this->entityManager,
+          $this->urlParameterEntityManager,
+          $this->urlParameterMigrate,
+          $language,
+          $entitiesMappingForAllDomain,
+          $keysForObjectLinkForAllDomain
+        ))->build($urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS][$language]);
+        $this->urlParametersByDomainsForAll[$language] = $urlParametersByDomain;
+      }
     }
     $this->dispatcher->dispatch($urlParameterEvent, UrlParameterEvent::EVENT_END);
+
     return $this;
   }
 
   /**
    * @param DomainInterface $domain
    * @param array $urlParametersEntityByDomain
+   * @param string $language
    *
    * @return $this
    */
-  public function addUrlParametersByDomain(DomainInterface $domain, array $urlParametersEntityByDomain = array()): UrlParameterManagement
+  public function addUrlParametersByDomain(DomainInterface $domain, string $language, array $urlParametersEntityByDomain = array()): UrlParameterManagement
   {
-    $this->debug->stopWatchStart("austral.url_parameter.build", $this->debugContainer);
+    $this->debug ? $this->debug->stopWatchStart("austral.url_parameter.build", $this->debugContainer) : null;
     $urlParametersByDomain = (new UrlParametersByDomain(
       $this->dispatcher,
       $domain,
       $this->entityManager,
       $this->urlParameterEntityManager,
       $this->urlParameterMigrate,
-      $domain->getCurrentLanguage(),
+      $language,
       $this->entitiesMapping,
       $this->keysForObjectLink
-    ))->build(AustralTools::getValueByKey($urlParametersEntityByDomain, $domain->getId(), array()));
-    $this->urlParametersByDomains[$domain->getId()] = $urlParametersByDomain;
+    ))->build(AustralTools::getValueByKey($urlParametersEntityByDomain, $language, array()));
+    $this->urlParametersByDomains[$domain->getId()][$language] = $urlParametersByDomain;
     $this->domainIdByUrlParameterId = array_merge($this->domainIdByUrlParameterId, $urlParametersByDomain->getDomainIdByUrlParameterId());
-    $this->debug->stopWatchStop("austral.url_parameter.build");
+    $this->debug ? $this->debug->stopWatchStop("austral.url_parameter.build") : null;
     return $this;
+  }
+
+  /**
+   * setCurrentLanguage
+   *
+   * @param $currentLanguage
+   *
+   * @return $this
+   */
+  public function setCurrentLanguage($currentLanguage): UrlParameterManagement
+  {
+    if(in_array($currentLanguage, $this->languages))
+    {
+      $this->currentLanguage = $currentLanguage;
+    }
+    return $this;
+  }
+
+  /**
+   * selectLanguage
+   *
+   * @param string|null $language
+   *
+   * @return string|null
+   */
+  protected function selectLanguage(string $language = null): ?string
+  {
+    return $language && in_array($language, $this->languages) ? $language : $this->currentLanguage;
+  }
+
+  /**
+   * selectLanguage
+   *
+   * @param EntityInterface $object
+   *
+   * @return string|null
+   */
+  protected function selectLanguageByObject(EntityInterface $object): ?string
+  {
+    $language = $this->selectLanguage();
+    if($object instanceof TranslateMasterInterface)
+    {
+      $language = $object->getLanguageCurrent();
+    }
+    return $language;
+  }
+
+  /**
+   * @return array
+   */
+  public function getUrlParametersByDomains(): array
+  {
+    return $this->urlParametersByDomains;
+  }
+
+  /**
+   * @param string|null $domainIdOrKey
+   *
+   * @return array
+   */
+  public function getUrlParametersByDomain(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): array
+  {
+    return AustralTools::getValueByKey($this->urlParametersByDomains, $this->getReelDomainId($domainIdOrKey), array());
+  }
+
+  /**
+   * getUrlParametersByDomainsByLanguage
+   *
+   * @param string|null $domainIdOrKey
+   * @param string|null $language
+   *
+   * @return UrlParametersByDomain|null
+   */
+  public function getUrlParametersByDomainsByLanguage(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER, string $language = null): ?UrlParametersByDomain
+  {
+    $language = $this->selectLanguage($language);
+    return AustralTools::getValueByKey($this->getUrlParametersByDomain($domainIdOrKey), $language, null);
+  }
+
+  /**
+   * getUrlParametersByDomainsByCurrentLanguage
+   *
+   * @param string|null $domainIdOrKey
+   *
+   * @return UrlParametersByDomain|null
+   */
+  public function getUrlParametersByDomainsByCurrentLanguage(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParametersByDomain
+  {
+    return $this->getUrlParametersByDomainsByLanguage($domainIdOrKey, $this->currentLanguage);
   }
 
   /**
@@ -302,9 +435,10 @@ class UrlParameterManagement
   public function getUrlParametersByDomainsWithTree(): array
   {
     $urlParametersByDomainsWithTree = array();
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach($this->urlParametersByDomains as $urlParametersByDomain)
+    /** @var array $urlParametersByDomainAndLanguage */
+    foreach($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguage)
     {
+      $urlParametersByDomain = $urlParametersByDomainAndLanguage[$this->currentLanguage];
       $urlParametersByDomainsWithTree[] = array(
         "domain"  =>  $urlParametersByDomain->getDomain(),
         "urls"    =>  $urlParametersByDomain->getTreeUrlParameters()
@@ -312,10 +446,13 @@ class UrlParameterManagement
     }
     if($this->domainsManagement->getEnabledDomainWithoutVirtual())
     {
-      $urlParametersByDomainsWithTree[] = array(
-        "domain"  =>  $this->urlParametersByDomainsForAll->getDomain(),
-        "urls"    =>  $this->urlParametersByDomainsForAll->getTreeUrlParameters()
-      );
+      foreach ($this->urlParametersByDomainsForAll as $urlParametersByDomainsForAll)
+      {
+        $urlParametersByDomainsWithTree[] = array(
+          "domain"  =>  $urlParametersByDomainsForAll->getDomain(),
+          "urls"    =>  $urlParametersByDomainsForAll->getTreeUrlParameters()
+        );
+      }
     }
     return $urlParametersByDomainsWithTree;
   }
@@ -346,10 +483,14 @@ class UrlParameterManagement
   public function getNameByKeyLinks(): array
   {
     $nameByKeysLinks = [];
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach($this->getUrlParametersByDomains() as $urlParametersByDomain)
+    /** @var array $urlParametersByDomainAndLanguages */
+    foreach($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      $nameByKeysLinks = array_merge($nameByKeysLinks, $urlParametersByDomain->getNameByKeyLinks());
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach ($urlParametersByDomainAndLanguages as $urlParametersByDomain)
+      {
+        $nameByKeysLinks = array_merge($nameByKeysLinks, $urlParametersByDomain->getNameByKeyLinks());
+      }
     }
     return $nameByKeysLinks;
   }
@@ -367,35 +508,44 @@ class UrlParameterManagement
   /**
    * @param string $objectClassname
    * @param string $objectId
+   * @param string|null $language
    *
    * @return UrlParameterInterface|null
    */
-  public function getUrlParameterByObjectClassnameAndId(string $objectClassname, string $objectId): ?UrlParameterInterface
+  public function getUrlParameterByObjectClassnameAndId(string $objectClassname, string $objectId, string $language = null): ?UrlParameterInterface
   {
     $urlParameter = null;
     $objectClassname = $this->getObjectReelClassname($objectClassname);
     if($objectClassname === "UrlParameter" || AustralTools::usedClass($objectClassname, UrlParameterInterface::class))
     {
       $domainId = array_key_exists($objectId, $this->domainIdByUrlParameterId) ? $this->domainIdByUrlParameterId[$objectId] : null;
-      if($domainId && ($urlParametersByDomain = $this->getUrlParametersByDomain($domainId)))
+      if($domainId && ($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainId, $language)))
       {
         $urlParameter = $urlParametersByDomain->getUrlParameterById($objectId);
       }
     }
     else
     {
-      if($urlParametersByDomain = $this->getUrlParametersByDomain($this->domainsManagement->getCurrentDomain()->getId()))
+      if($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($this->domainsManagement->getCurrentDomain()->getId(), $language))
       {
         /** @var UrlParameterInterface $urlParameter */
         $urlParameter = $urlParametersByDomain->getUrlParameterByObjectClassnameAndId($objectClassname, $objectId);
       }
       if(!$urlParameter) {
-        /** @var UrlParametersByDomain $urlParametersByDomain */
-        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomain)
+        /** @var array $urlParametersByDomainAndLanguage */
+        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguage)
         {
-          if($urlParameter = $urlParametersByDomain->getUrlParameterByObjectClassnameAndId($objectClassname, $objectId))
+          /** @var UrlParametersByDomain $urlParametersByDomain */
+          foreach ($urlParametersByDomainAndLanguage as $languageByDomain => $urlParametersByDomain)
           {
-            break;
+            $language = $this->selectLanguage($language);
+            if($languageByDomain === $language)
+            {
+              if($urlParameter = $urlParametersByDomain->getUrlParameterByObjectClassnameAndId($objectClassname, $objectId))
+              {
+                break;
+              }
+            }
           }
         }
       }
@@ -409,8 +559,9 @@ class UrlParameterManagement
    * @return array
    * @throws \Exception
    */
-  public function getUrlParametersByObject(EntityInterface $object): array
+  public function getUrlParametersByObject(EntityInterface $object, string $language = null): array
   {
+    $language = $language ?? $this->selectLanguageByObject($object);
     $urlParameters = [];
     /** @var DomainFilterMapping $domainFilterMapping */
     if($domainFilterMapping = $this->mapping->getEntityClassMapping($object->getClassnameForMapping(), DomainFilterMapping::class))
@@ -419,7 +570,7 @@ class UrlParameterManagement
       {
         if(!$domainFilterMapping->getForAllDomainEnabled() || $domainFilterMapping->getObjectValue($object, "domainId") !== DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS)
         {
-          $urlParametersByDomain = $this->getUrlParametersByDomain($domainFilterMapping->getObjectValue($object, "domainId"));
+          $urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainFilterMapping->getObjectValue($object, "domainId"), $language);
           if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
           {
             $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
@@ -428,13 +579,16 @@ class UrlParameterManagement
         }
         else
         {
-          /** @var UrlParametersByDomain $urlParametersByDomain */
-          foreach($this->urlParametersByDomains as $urlParametersByDomain)
+          foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
           {
-            if(!$urlParametersByDomain->getIsVirtual())
+            /** @var UrlParametersByDomain $urlParametersByDomain */
+            foreach ($urlParametersByDomainAndLanguages as $languageByDomain => $urlParametersByDomain)
             {
-              $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
-              $urlParameters[] = $urlParameter;
+              if(!$urlParametersByDomain->getIsVirtual() && ($languageByDomain === $language))
+              {
+                $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
+                $urlParameters[] = $urlParameter;
+              }
             }
           }
         }
@@ -443,41 +597,55 @@ class UrlParameterManagement
       {
         foreach($domainFilterMapping->getObjectValue($object, "domainIds") as $domainId)
         {
-          $urlParametersByDomain = $this->getUrlParametersByDomain($domainId);
+          $urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainId, $language);
           if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
           {
             $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
             $urlParameters[] = $urlParameter;
           }
         }
-        /** @var UrlParametersByDomain $urlParametersByDomain */
-        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomain)
+        /**
+         * @var array $urlParametersByDomain
+         */
+        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
         {
-          if(!$urlParametersByDomain->getIsVirtual() && !$urlParametersByDomain->checkDomainIds($object))
+          /** @var UrlParametersByDomain $urlParametersByDomain */
+          foreach ($urlParametersByDomainAndLanguages as $languageByDomain => $urlParametersByDomain)
           {
-            if($urlParameter = $urlParametersByDomain->getUrlParameterByObject($object))
+            if(!$urlParametersByDomain->getIsVirtual() && !$urlParametersByDomain->checkDomainIds($object) && ($languageByDomain === $language))
             {
-              $urlParametersByDomain->deleteUrlParameter($urlParameter);
+              if($urlParameter = $urlParametersByDomain->getUrlParameterByObject($object))
+              {
+                $urlParametersByDomain->deleteUrlParameter($urlParameter);
+              }
             }
           }
         }
       }
       else
       {
-        /** @var UrlParametersByDomain $urlParametersByDomain */
-        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomain)
+        /**
+         * @var string $domainId
+         * @var array $urlParametersByDomain
+         */
+        foreach ($this->getUrlParametersByDomains() as $domainId => $urlParametersByDomainAndLanguages)
         {
-          if(!$urlParametersByDomain->getIsVirtual())
+          /** @var UrlParametersByDomain $urlParametersByDomain */
+          foreach ($urlParametersByDomainAndLanguages as $languageByDomain => $urlParametersByDomain)
           {
-            $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
-            $urlParameters[] = $urlParameter;
+            if(!$urlParametersByDomain->getIsVirtual() && ($languageByDomain === $language))
+            {
+              $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
+              $urlParameters[] = $urlParameter;
+            }
           }
         }
+
       }
     }
     else
     {
-      $urlParametersByDomain = $this->getUrlParametersByDomain();
+      $urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($language);
       if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
       {
         $urlParameter = $urlParametersByDomain->recoveryOrCreateUrlParameterByObject($object);
@@ -496,8 +664,9 @@ class UrlParameterManagement
    */
   public function getUrlParametersByObjectAndDomainId(EntityInterface $object, ?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameterInterface
   {
+    $language = $this->selectLanguageByObject($object);
     /** @var UrlParametersByDomain $urlParametersByDomain */
-    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
+    if($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainIdOrKey, $language))
     {
       return $urlParametersByDomain->getUrlParameterByObject($object);
     }
@@ -505,34 +674,17 @@ class UrlParameterManagement
   }
 
   /**
-   * @return array
-   */
-  public function getUrlParametersByDomains(): array
-  {
-    return $this->urlParametersByDomains;
-  }
-
-  /**
-   * @param string|null $domainIdOrKey
-   *
-   * @return UrlParametersByDomain|null
-   */
-  public function getUrlParametersByDomain(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParametersByDomain
-  {
-    return AustralTools::getValueByKey($this->urlParametersByDomains, $this->getReelDomainId($domainIdOrKey), null);
-  }
-
-  /**
    * @param string|null $domainIdOrKey
    * @param string|null $slug
    * @param bool $objectInit
+   * @param string|null $language
    *
    * @return UrlParameterInterface|null
    */
-  public function retreiveUrlParameterByDomainIdAndSlug(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER, ?string $slug = null, bool $objectInit = false): ?UrlParameterInterface
+  public function retreiveUrlParameterByDomainIdAndSlug(?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER, ?string $slug = null, bool $objectInit = false, string $language = null): ?UrlParameterInterface
   {
     /** @var UrlParametersByDomain $urlParametersByDomain */
-    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
+    if($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainIdOrKey, $language))
     {
       return $urlParametersByDomain->getUrlParameterByPath($slug ?? "", $objectInit);
     }
@@ -547,8 +699,9 @@ class UrlParameterManagement
    */
   public function retreiveUrlParameterByObject(EntityInterface $object, ?string $domainIdOrKey = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameterInterface
   {
+    $language = $this->selectLanguageByObject($object);
     /** @var UrlParametersByDomain $urlParametersByDomain */
-    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainIdOrKey))
+    if($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainIdOrKey, $language))
     {
       return $urlParametersByDomain->getUrlParameterByObject($object, false);
     }
@@ -563,12 +716,16 @@ class UrlParameterManagement
   public function getTotalUrlsByStatus(string $status): int
   {
     $count = 0;
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
+    /** @var array $urlParametersByDomainAndLanguages */
+    foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      if(!$urlParametersByDomain->getIsVirtual())
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach($urlParametersByDomainAndLanguages as $urlParametersByDomain)
       {
-        $count += $urlParametersByDomain->getNbUrlParametersByStatus($status);
+        if(!$urlParametersByDomain->getIsVirtual())
+        {
+          $count += $urlParametersByDomain->getNbUrlParametersByStatus($status);
+        }
       }
     }
     return $count;
@@ -580,10 +737,17 @@ class UrlParameterManagement
   public function countUrlParametersConflict(): int
   {
     $count = 0;
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
+    /** @var array $urlParametersByDomainAndLanguages */
+    foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      $count += count($urlParametersByDomain->getUrlParametersConflict());
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach($urlParametersByDomainAndLanguages as $urlParametersByDomain)
+      {
+        if(!$urlParametersByDomain->getIsVirtual())
+        {
+          $count += count($urlParametersByDomain->getUrlParametersConflict());
+        }
+      }
     }
     return $count;
   }
@@ -596,11 +760,16 @@ class UrlParameterManagement
    */
   public function getNbUrlsStatusByDomainAndStatus(string $domainId, string $status): ?int
   {
-    if($urlParametersByDomain = $this->getUrlParametersByDomain($domainId))
+    $nbValue = 0;
+    if($urlParametersByDomainAndLanguages = $this->getUrlParametersByDomain($domainId))
     {
-      return $urlParametersByDomain->getNbUrlParametersByStatus($status);
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach($urlParametersByDomainAndLanguages as $urlParametersByDomain)
+      {
+        $nbValue += $urlParametersByDomain->getNbUrlParametersByStatus($status);
+      }
     }
-    return 0;
+    return $nbValue;
   }
 
   /**
@@ -610,7 +779,7 @@ class UrlParameterManagement
    */
   public function remove(UrlParameterInterface $urlParameter): UrlParameterManagement
   {
-    if($urlParametersByDomain = $this->getUrlParametersByDomain($urlParameter->getDomainId()))
+    if($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($urlParameter->getDomainId(), $urlParameter->getLanguage()))
     {
       $urlParametersByDomain->remove($urlParameter);
     }
@@ -624,10 +793,13 @@ class UrlParameterManagement
    */
   public function deleteUrlParameterByObject(EntityInterface $object): UrlParameterManagement
   {
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach($this->urlParametersByDomains as $urlParametersByDomain)
+    foreach($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      $urlParametersByDomain->deleteUrlParameterByObject($object);
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach($urlParametersByDomainAndLanguages as $urlParametersByDomain)
+      {
+        $urlParametersByDomain->deleteUrlParameterByObject($object);
+      }
     }
     return $this;
   }
@@ -642,18 +814,22 @@ class UrlParameterManagement
   public function duplicateUrlParameterByObject(EntityInterface $objectSource, EntityInterface $object): UrlParameterManagement
   {
     $urlParametersDuplicate = array();
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach($this->urlParametersByDomains as $urlParametersByDomain)
+
+    foreach($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      if($urlParameterDuplicate = $urlParametersByDomain->duplicateUrlParameterByObject($objectSource, $object))
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach($urlParametersByDomainAndLanguages as $urlParametersByDomain)
       {
-        $urlParametersDuplicate[] = $urlParameterDuplicate;
+        if($urlParameterDuplicate = $urlParametersByDomain->duplicateUrlParameterByObject($objectSource, $object))
+        {
+          $urlParametersDuplicate[] = $urlParameterDuplicate;
+        }
       }
     }
     foreach ($urlParametersDuplicate as $urlParameterDuplicate)
     {
       /** @var UrlParametersByDomain $urlParametersByDomain */
-      if($urlParametersByDomain = $this->getUrlParametersByDomain($urlParameterDuplicate->getDomainId()))
+      if($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($urlParameterDuplicate->getDomainId(), $urlParameterDuplicate->getLanguage()))
       {
         $urlParametersByDomain->hydrate($urlParameterDuplicate);
       }
@@ -669,7 +845,7 @@ class UrlParameterManagement
   public function updateUrlParameter(UrlParameterInterface $urlParameter): ?UrlParameterInterface
   {
     /** @var UrlParametersByDomain $urlParametersByDomain */
-    if($urlParametersByDomain = $this->getUrlParametersByDomain($urlParameter->getDomainId()))
+    if($urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($urlParameter->getDomainId(), $urlParameter->getLanguage()))
     {
       $urlParametersByDomain->updateUrlParameter($urlParameter);
     }
@@ -701,34 +877,45 @@ class UrlParameterManagement
       }
     }
 
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
+    /** @var array $urlParametersByDomainAndLanguages */
+    foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      if(!$urlParametersByDomain->getIsVirtual())
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach ($urlParametersByDomainAndLanguages as $urlParametersByDomain)
       {
-        $urlParametersByDomain->hydrateObjects($objectsByEntityClass);
+        if(!$urlParametersByDomain->getIsVirtual())
+        {
+          $urlParametersByDomain->hydrateObjects($objectsByEntityClass);
+        }
       }
     }
     return $this;
   }
 
   /**
-   * @return void
-   * @throws \Exception
+   * @param string|null $domainId
+   *
+   * @return UrlParameterManagement
+   * @throws QueryException
    */
-  public function generateAllUrlParameters(?string $domainId = null)
+  public function generateAllUrlParameters(?string $domainId = null): UrlParameterManagement
   {
     $this->hydrateObjects();
 
-    /** @var UrlParametersByDomain $urlParametersByDomain */
-    foreach ($this->urlParametersByDomains as $urlParametersByDomain)
+    /** @var array $urlParametersByDomainAndLanguages */
+    foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
-      if(!$urlParametersByDomain->getIsVirtual() && (!$domainId || $domainId === $urlParametersByDomain->getDomain()->getId()))
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach ($urlParametersByDomainAndLanguages as $urlParametersByDomain)
       {
-        $urlParametersByDomain->generateAllUrlParameters();
+        if(!$urlParametersByDomain->getIsVirtual() && (!$domainId || $domainId === $urlParametersByDomain->getDomain()->getId()))
+        {
+          $urlParametersByDomain->generateAllUrlParameters();
+        }
       }
     }
     $this->entityManager->flush();
+    return $this;
   }
 
   /**
@@ -739,6 +926,7 @@ class UrlParameterManagement
    */
   public function generateUrlParameter(EntityInterface $object): UrlParameterManagement
   {
+    $language = $this->selectLanguageByObject($object);
     /** @var DomainFilterMapping $domainFilterMapping */
     if($domainFilterMapping = $this->mapping->getEntityClassMapping($object->getClassnameForMapping(), DomainFilterMapping::class))
     {
@@ -746,7 +934,7 @@ class UrlParameterManagement
       {
         if(!$domainFilterMapping->getForAllDomainEnabled() || $domainFilterMapping->getObjectValue($object, "domainId") !== DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS)
         {
-          $urlParametersByDomain = $this->getUrlParametersByDomain($domainFilterMapping->getObjectValue($object, "domainId"));
+          $urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainFilterMapping->getObjectValue($object, "domainId"), $language);
           if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
           {
             $urlParametersByDomain->generateUrlParameter($object);
@@ -755,13 +943,17 @@ class UrlParameterManagement
         }
         else
         {
-          /** @var UrlParametersByDomain $urlParametersByDomain */
-          foreach($this->urlParametersByDomains as $urlParametersByDomain)
+          /** @var array $urlParametersByDomainAndLanguages */
+          foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
           {
-            if(!$urlParametersByDomain->getIsVirtual())
+            /** @var UrlParametersByDomain $urlParametersByDomain */
+            foreach ($urlParametersByDomainAndLanguages as $languageByDomain => $urlParametersByDomain)
             {
-              $urlParametersByDomain->generateUrlParameter($object);
-              $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+              if(!$urlParametersByDomain->getIsVirtual() && ($languageByDomain === $language))
+              {
+                $urlParametersByDomain->generateUrlParameter($object);
+                $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+              }
             }
           }
         }
@@ -770,7 +962,7 @@ class UrlParameterManagement
       {
         foreach($domainFilterMapping->getObjectValue($object, "domainIds") as $domainId)
         {
-          $urlParametersByDomain = $this->getUrlParametersByDomain($domainId);
+          $urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage($domainId, $language);
           if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
           {
             $urlParametersByDomain->generateUrlParameter($object);
@@ -780,20 +972,24 @@ class UrlParameterManagement
       }
       else
       {
-        /** @var UrlParametersByDomain $urlParametersByDomain */
-        foreach($this->urlParametersByDomains as $urlParametersByDomain)
+        /** @var array $urlParametersByDomainAndLanguages */
+        foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
         {
-          if(!$urlParametersByDomain->getIsVirtual())
+          /** @var UrlParametersByDomain $urlParametersByDomain */
+          foreach ($urlParametersByDomainAndLanguages as $languageByDomain => $urlParametersByDomain)
           {
-            $urlParametersByDomain->generateUrlParameter($object);
-            $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+            if(!$urlParametersByDomain->getIsVirtual() && ($languageByDomain === $language))
+            {
+              $urlParametersByDomain->generateUrlParameter($object);
+              $this->recoveryValuesAustral30($urlParametersByDomain, $object);
+            }
           }
         }
       }
     }
     else
     {
-      $urlParametersByDomain = $this->getUrlParametersByDomain();
+      $urlParametersByDomain = $this->getUrlParametersByDomainsByLanguage(DomainsManagement::DOMAIN_ID_MASTER, $language);
       if($urlParametersByDomain && !$urlParametersByDomain->getIsVirtual())
       {
         $urlParametersByDomain->generateUrlParameter($object);

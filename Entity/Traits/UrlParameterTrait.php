@@ -28,17 +28,23 @@ trait UrlParameterTrait
   protected array $urlParameters = array();
 
   /**
-   * @param string|null $domainId
+   * @param string $domainId
+   * @param string|null $language
    *
    * @return UrlParameter|null
    */
-  public function getUrlParameter(string $domainId = DomainsManagement::DOMAIN_ID_MASTER): ?UrlParameter
+  public function getUrlParameter(string $domainId = DomainsManagement::DOMAIN_ID_MASTER, string $language = null): ?UrlParameter
   {
-    if(array_key_exists($domainId, $this->urlParameters))
+    $urlParameters = $this->urlParameters;
+    if(array_key_exists($domainId, $urlParameters))
     {
-      return $this->urlParameters[$domainId];
+      $urlParameters = $urlParameters[$domainId];
     }
-    return AustralTools::first($this->urlParameters);
+    if(method_exists($this, "getLanguageCurrent"))
+    {
+      $urlParameters = AustralTools::getValueByKey($urlParameters, $language ?? $this->getLanguageCurrent());
+    }
+    return AustralTools::first($urlParameters);
   }
 
   /**
@@ -46,7 +52,7 @@ trait UrlParameterTrait
    */
   public function addUrlParameter(UrlParameter $urlParameter): EntityInterface
   {
-    $this->urlParameters[$urlParameter->getDomainId()] = $urlParameter;
+    $this->urlParameters[$urlParameter->getDomainId()][$urlParameter->getLanguage()] = $urlParameter;
     return $this;
   }
 
