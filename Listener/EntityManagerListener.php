@@ -65,7 +65,7 @@ class EntityManagerListener
     {
       /** @var DomainInterface $domain */
       $domain = $entityManagerEvent->getObject();
-      $this->urlParametersManagement->addUrlParametersByDomain($domain)
+      $this->urlParametersManagement->addUrlParametersByDomainAllLanguages($domain)
         ->generateAllUrlParameters($domain->getId());
     }
     else if(!$object instanceof UrlParameterInterface && $this->urlParametersManagement->hasEntityMappingByObjectClassname($object->getClassnameForMapping()))

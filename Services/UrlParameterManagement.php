@@ -317,6 +317,21 @@ class UrlParameterManagement
   /**
    * @param DomainInterface $domain
    * @param array $urlParametersEntityByDomain
+   *
+   * @return $this
+   */
+  public function addUrlParametersByDomainAllLanguages(DomainInterface $domain, array $urlParametersEntityByDomain = array()): UrlParameterManagement
+  {
+    foreach ($this->languages as $language)
+    {
+      $this->addUrlParametersByDomain($domain, $language, $urlParametersEntityByDomain);
+    }
+    return $this;
+  }
+
+  /**
+   * @param DomainInterface $domain
+   * @param array $urlParametersEntityByDomain
    * @param string $language
    *
    * @return $this
