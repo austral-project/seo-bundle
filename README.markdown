@@ -1,9 +1,9 @@
 # Entity SEO Bundle
 
 [![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%207.4-8892BF.svg)](https://php.net/)
-[![Latest Stable Version](https://img.shields.io/packagist/v/austral/entity-seo-bundle.svg)](https://packagist.org/packages/austral/entity-seo-bundle)
-[![Total Downloads](https://poser.pugx.org/austral/entity-seo-bundle/downloads.svg)](https://packagist.org/packages/austral/entity-seo-bundle)
-[![License](https://poser.pugx.org/austral/entity-seo-bundle/license.svg)](https://packagist.org/packages/austral/entity-seo-bundle)
+[![Latest Stable Version](https://img.shields.io/packagist/v/austral/seo-bundle.svg)](https://packagist.org/packages/austral/seo-bundle)
+[![Total Downloads](https://poser.pugx.org/austral/seo-bundle/downloads.svg)](https://packagist.org/packages/austral/seo-bundle)
+[![License](https://poser.pugx.org/austral/seo-bundle/license.svg)](https://packagist.org/packages/austral/seo-bundle)
 
 Tools for SEO the Entities [Symfony Framework](https://symfony.com) managed by doctrine ORM.
 
@@ -12,11 +12,11 @@ Tools for SEO the Entities [Symfony Framework](https://symfony.com) managed by d
 You can install it with Composer:
 
 ```
-composer require austral/entity-seo-bundle
+composer require austral/seo-bundle
 ```
 
 ## Documentation
-See documentation on the [official website](https://austral.dev/en/bundles/entity-seo-bundles)
+See documentation on the [official website](https://austral.dev/en/bundles/seo-bundle)
 
 ## Commit Messages
 
