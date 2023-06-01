@@ -100,7 +100,8 @@ class AustralRouting
       $slugIsRequired = $route->hasRequirement("slug");
     }
 
-    $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain()->getId() : $domainId;
+    $currentDomainWithVirtual =  $this->domainsManagement->getCurrentDomain(false);
+    $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain(false)->getId() : $domainId;
     if($object)
     {
       if(!$object instanceof UrlParameterInterface)
@@ -112,7 +113,13 @@ class AustralRouting
         $urlParameter = $object;
       }
       if($urlParameter) {
-        $domainId = $urlParameter->getDomainId();
+        if($currentDomainWithVirtual->getIsVirtual())
+        {
+          if(!$currentDomainWithVirtual->getMaster() || $currentDomainWithVirtual->getMaster()->getId() !== $urlParameter->getDomainId())
+          {
+            $domainId = $urlParameter->getDomainId();
+          }
+        }
         if($slugIsRequired) {
           $parameters["slug"] = $urlParameter->getPath();
         }
@@ -120,7 +127,7 @@ class AustralRouting
     }
 
     /** @var RequestContext $requestContext */
-    $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainId);
+    $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainId, false);
     if($requestContext && $requestContext->getHost() !== $this->router->getContext()->getHost())
     {
       $this->router->setContext($requestContext);
