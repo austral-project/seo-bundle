@@ -3,7 +3,7 @@
     <span class="picto google-logo"></span>
     <div class="contenu">
       <div class="url">
-        <span class="beforeValue">https://{{ form.view.vars.value.domain.domain }}{{ form.view.vars.value.getPath() ? form.view.vars.value.getBasePath() : "" }}</span>
+        <span class="beforeValue">https://{{ form.view.vars.value.domain.domain }}{{ form.view.vars.value.getBasePath()|first != "/" ? "/" : "" }}{{ form.view.vars.value.getPath() ? form.view.vars.value.getBasePath() : "" }}</span>
         <span class="value" data-refresh-value-by="#{{ form.view["pathLast"].vars.id|default(null) }}">{{ form.view.vars.value.pathLast ?? "" }}</span>
       </div>
       <div class="title">
