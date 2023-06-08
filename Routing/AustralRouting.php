@@ -101,7 +101,7 @@ class AustralRouting
     }
 
     $currentDomainWithVirtual =  $this->domainsManagement->getCurrentDomain(false);
-    $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain(false)->getId() : $domainId;
+    $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain(true)->getId() : $domainId;
     if($object)
     {
       if(!$object instanceof UrlParameterInterface)
@@ -135,6 +135,15 @@ class AustralRouting
     if($slugIsRequired && (!array_key_exists("slug", $parameters) || !$parameters["slug"])) {
       return "";
     }
+
+    if($route = $this->router->getRouteCollection()->get($routeName))
+    {
+      if(str_contains($route->getPath(), "{_locale}"))
+      {
+        $parameters['_locale'] = $this->domainsManagement->getHttpRequest()->getLanguage();
+      }
+    }
+
     return $this->router->generate($routeName, $parameters, $referenceType);
   }
 
