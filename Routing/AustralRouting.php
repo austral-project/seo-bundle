@@ -14,7 +14,6 @@ use Austral\EntityBundle\Entity\EntityInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Services\UrlParameterManagement;
-use Austral\ToolsBundle\AustralTools;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouterInterface;
@@ -127,7 +126,7 @@ class AustralRouting
     }
 
     /** @var RequestContext $requestContext */
-    $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainId, false);
+    $requestContext = $this->domainsManagement->getRequestContextByDomainId($currentDomainWithVirtual->getId(), false);
     if($requestContext && $requestContext->getHost() !== $this->router->getContext()->getHost())
     {
       $this->router->setContext($requestContext);
