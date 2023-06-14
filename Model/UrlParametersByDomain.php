@@ -584,6 +584,7 @@ class UrlParametersByDomain
       $urlParameter->setPathLast("{$urlParameter->getPathLast()}{$uniqueKey}")
         ->setPath("{$urlParameter->getPath()}-copy-{$uniqueKey}")
         ->setObjectRelation("{$object->getClassnameForMapping()}::{$object->getId()}")
+        ->setObjectKeyname("{$object->getKeyname()}")
         ->setObject($object)
         ->setStatus(UrlParameterInterface::STATUS_UNPUBLISHED)
         ->setKeyLink("{$urlParameter->getClassname()}::{$urlParameter->getId()}");
