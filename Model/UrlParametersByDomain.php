@@ -218,6 +218,45 @@ class UrlParametersByDomain
   }
 
   /**
+   * treeParentByUrlParameter
+   * @param UrlParameter $urlParameter
+   * @return array
+   */
+  public function treeParentByUrlParameter(UrlParameter $urlParameter): array
+  {
+    $treeParent = array();
+    $treeParent["/{$urlParameter->getPath()}"] = $urlParameter;
+    $this->treeParentByObject($urlParameter->getObject(), $treeParent);
+    if(!array_key_exists("/", $treeParent))
+    {
+      $treeParent["/"] = $this->getUrlParameterByPath("");
+    }
+    ksort($treeParent);
+    return $treeParent;
+  }
+
+  /**
+   * treeParentByObject
+   * @param $object
+   * @param array $treeParent
+   * @return void
+   */
+  protected function treeParentByObject($object, array &$treeParent = array())
+  {
+    if($object instanceof TreePageInterface)
+    {
+      if($parent = $object->getTreePageParent())
+      {
+        if($urlParameterParent = $this->getUrlParameterByObjectClassnameAndId($parent->getClassnameForMapping(), $parent->getId()))
+        {
+          $treeParent["/{$urlParameterParent->getPath()}"] = $urlParameterParent;
+          $this->treeParentByObject($urlParameterParent->getObject(), $treeParent);
+        }
+      }
+    }
+  }
+
+  /**
    * @return array
    */
   public function getUrlParametersPath(): array
