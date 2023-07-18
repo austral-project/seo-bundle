@@ -4,9 +4,7 @@
     <div class="field field-typeValue">#INTERNAL_LINK_{{ urlParameter.classname }}_{{ urlParameter.id }}#</div>
   </div>
 {% endfor %}
-{% if field.vars.urlParameters|length > 1 %}
-  <div id="field-form_master_internalLink-content" class="field-content field-content-textField">
-    <label>{{ "fields.internalLink.entitled"|trans({}, form.mapper.translateDomain) }} - Générique</label>
-    <div class="field field-typeValue">#INTERNAL_LINK_{{ form.mapper.object.classname }}_{{ form.mapper.object.id }}#</div>
-  </div>
-{% endif %}
+<div id="field-form_master_internalLink-content" class="field-content field-content-textField">
+  <label>{{ "fields.internalLink.entitled"|trans({}, form.mapper.translateDomain) }} - Générique</label>
+  <div class="field field-typeValue">#INTERNAL_LINK_{{ form.mapper.object.classname }}_{{ form.mapper.object.id }}#</div>
+</div>
