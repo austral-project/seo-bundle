@@ -44,7 +44,10 @@ trait UrlParameterTrait
     {
       $urlParameters = AustralTools::getValueByKey($urlParameters, $language ?? $this->getLanguageCurrent());
     }
-    return AustralTools::first($urlParameters);
+    if(is_array($urlParameters)) {
+      return AustralTools::first($urlParameters);
+    }
+    return null;
   }
 
   /**
