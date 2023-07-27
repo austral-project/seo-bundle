@@ -83,13 +83,13 @@ class AustralRouting
   }
 
   /**
-   * @param string $route
+   * @param string $routeName
    * @param EntityInterface|null $object
    * @param array $parameters
    * @param string|null $domainId
    * @param int $referenceType
    *
-   * @return string
+   * @return string|null
    */
   public function generate(string $routeName, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
   {
@@ -99,7 +99,16 @@ class AustralRouting
       $slugIsRequired = $route->hasRequirement("slug");
     }
 
-    $currentDomainWithVirtual =  $this->domainsManagement->getCurrentDomain(false);
+    $currentDomainWithVirtual = null;
+    if($domainId !== "current")
+    {
+      $currentDomainWithVirtual = $this->domainsManagement->getDomainById($domainId);
+    }
+
+    if(!$currentDomainWithVirtual)
+    {
+      $currentDomainWithVirtual =  $this->domainsManagement->getCurrentDomain(false);
+    }
     $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain(true)->getId() : $domainId;
     if($object)
     {

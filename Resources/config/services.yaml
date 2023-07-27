@@ -65,7 +65,7 @@ services:
 
   austral.seo.elastic_search.listener:
     class:          Austral\SeoBundle\Listener\ElasticSearchListener
-    arguments:      ["@austral.entity.mapping", "@austral.http.domains.management", "@austral.seo.url_parameter.management"]
+    arguments:      ["@austral.entity.mapping", "@austral.http.domains.management", "@austral.seo.url_parameter.management", "@austral.seo.routing"]
     tags:
       - { name: kernel.event_listener, event: "austral.elastic_search.select.objects", method: objects }
 

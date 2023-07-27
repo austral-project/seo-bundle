@@ -13,14 +13,13 @@ namespace Austral\SeoBundle\Listener;
 
 use Austral\ElasticSearchBundle\Event\ElasticSearchSelectObjectsEvent;
 use Austral\ElasticSearchBundle\Model\Result;
-use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
 use Austral\EntityBundle\Mapping\EntityMapping;
 use Austral\EntityBundle\Mapping\Mapping;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\ElasticSearchBundle\Model\ObjectToHydrate;
 use Austral\SeoBundle\Entity\UrlParameter;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
+use Austral\SeoBundle\Routing\AustralRouting;
 use Austral\SeoBundle\Services\UrlParameterManagement;
 use Doctrine\ORM\Query\QueryException;
 
@@ -47,15 +46,22 @@ class ElasticSearchListener
   protected UrlParameterManagement $urlParameterManagement;
 
   /**
+   * @var AustralRouting
+   */
+  protected AustralRouting $australRouting;
+
+  /**
    * @param Mapping $mapping
    * @param DomainsManagement $domainsManagement
    * @param UrlParameterManagement $urlParameterManagement
+   * @param AustralRouting $australRouting
    */
-  public function __construct(Mapping $mapping, DomainsManagement $domainsManagement, UrlParameterManagement $urlParameterManagement)
+  public function __construct(Mapping $mapping, DomainsManagement $domainsManagement, UrlParameterManagement $urlParameterManagement, AustralRouting $australRouting)
   {
     $this->mapping = $mapping;
     $this->domainsManagement = $domainsManagement;
     $this->urlParameterManagement = $urlParameterManagement;
+    $this->australRouting = $australRouting;
   }
 
   /**
@@ -84,7 +90,7 @@ class ElasticSearchListener
           $objectToHydrateClone = clone $objectToHydrate;
           $objectToHydrateClone->addValuesParameters(Result::VALUE_REF_TITLE, $urlParameter->getSeoTitle());
           $objectToHydrateClone->addValuesParameters(Result::VALUE_REF_DESCRIPTION, $urlParameter->getSeoDescription());
-          $objectToHydrateClone->addValuesParameters(Result::VALUE_REF_URL, $urlParameter->getPath());
+          $objectToHydrateClone->addValuesParameters(Result::VALUE_REF_URL, $this->australRouting->getPath("austral_website_page", $objectToHydrate->getObject(), array(), $urlParameter->getDomainId()));
           $objectToHydrateClone->addValuesParameters("domain_id", $urlParameter->getDomainId());
           $objectToHydrateClone->setElasticSearchId(sprintf("%s_%s", $objectToHydrate->getElasticSearchId(), $urlParameter->getId()));
           $objectsToHydrate[$objectToHydrateClone->getElasticSearchId()] = $objectToHydrateClone;
