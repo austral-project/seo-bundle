@@ -17,6 +17,7 @@ services:
       - '@router'
       - "@austral.http.domains.management"
       - "@austral.seo.url_parameter.management"
+      - "@austral.http.config"
 
 ##### Twig Extension
   twig.extension.seo:

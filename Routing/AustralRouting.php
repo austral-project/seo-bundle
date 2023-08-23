@@ -11,6 +11,7 @@
 namespace Austral\SeoBundle\Routing;
 
 use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\HttpBundle\Configuration\HttpConfiguration;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Services\UrlParameterManagement;
@@ -41,17 +42,24 @@ class AustralRouting
   private DomainsManagement $domainsManagement;
 
   /**
+   * @var HttpConfiguration
+   */
+  private HttpConfiguration $httpConfiguration;
+
+  /**
    * UrlParameterMigrate constructor.
    *
    * @param RouterInterface $router
    * @param DomainsManagement $domainsManagement
    * @param UrlParameterManagement $urlParameterManagement
+   * @param HttpConfiguration $httpConfiguration
    */
-  public function __construct(RouterInterface $router, DomainsManagement $domainsManagement, UrlParameterManagement $urlParameterManagement)
+  public function __construct(RouterInterface $router, DomainsManagement $domainsManagement, UrlParameterManagement $urlParameterManagement, HttpConfiguration $httpConfiguration)
   {
     $this->router = $router;
     $this->urlParameterManagement = $urlParameterManagement;
     $this->domainsManagement = $domainsManagement;
+    $this->httpConfiguration = $httpConfiguration;
   }
 
   /**
@@ -99,17 +107,13 @@ class AustralRouting
       $slugIsRequired = $route->hasRequirement("slug");
     }
 
-    $currentDomainWithVirtual = null;
-    if($domainId !== "current")
+    if($object instanceof UrlParameterInterface)
     {
-      $currentDomainWithVirtual = $this->domainsManagement->getDomainById($domainId);
+      $domainId = $domainId === "current" ? $object->getDomainId() : $domainId;
     }
-
-    if(!$currentDomainWithVirtual)
-    {
-      $currentDomainWithVirtual =  $this->domainsManagement->getCurrentDomain(false);
-    }
-    $domainId = $domainId === "current" ? $this->domainsManagement->getCurrentDomain(true)->getId() : $domainId;
+    $domain = $domainId === "current" ? $this->domainsManagement->getCurrentDomain() : $this->domainsManagement->getDomainById($domainId);
+    $domain = $domain->getDomainByEnv($this->httpConfiguration->get("env.current"));
+    $domainId = $domain->getId();
     if($object)
     {
       if(!$object instanceof UrlParameterInterface)
@@ -121,13 +125,6 @@ class AustralRouting
         $urlParameter = $object;
       }
       if($urlParameter) {
-        if($currentDomainWithVirtual->getIsVirtual())
-        {
-          if(!$currentDomainWithVirtual->getMaster() || $currentDomainWithVirtual->getMaster()->getId() !== $urlParameter->getDomainId())
-          {
-            $domainId = $urlParameter->getDomainId();
-          }
-        }
         if($slugIsRequired) {
           $parameters["slug"] = $urlParameter->getPath();
         }
@@ -135,7 +132,7 @@ class AustralRouting
     }
 
     /** @var RequestContext $requestContext */
-    $requestContext = $this->domainsManagement->getRequestContextByDomainId($currentDomainWithVirtual->getId(), false);
+    $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainId, false);
     if($requestContext && $requestContext->getHost() !== $this->router->getContext()->getHost())
     {
       $this->router->setContext($requestContext);
