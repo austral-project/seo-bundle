@@ -212,7 +212,7 @@ class FormListener
           foreach ($urlParameters as $urlParameter)
           {
             $formEvent->getFormMapper()->addAction(new Action("goTo_{$urlParameter->getId()}", "actions.goTo",
-              $this->australRouting->getUrl("austral_website_page", $urlParameter),
+              $this->australRouting->getUrl($urlParameter->getPathLast() ? "austral_website_page" : "austral_website_homepage", $urlParameter),
               "austral-picto-corner-forward",
               array(
                 "class"   =>  "button-picto",
