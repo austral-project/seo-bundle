@@ -19,6 +19,7 @@ use Austral\ListBundle\Column\Base\ColumnWithPath;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Entity\Traits\UrlParameterTrait;
 use Austral\ToolsBundle\AustralTools;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * Austral Column Choice.
@@ -49,6 +50,11 @@ class UrlParameterStatus extends ColumnWithPath
   protected string $domainId;
 
   /**
+   * @var bool
+   */
+  protected bool $viewDomainName = true;
+
+  /**
    * @var array
    */
   protected array $values = array();
@@ -65,9 +71,17 @@ class UrlParameterStatus extends ColumnWithPath
    */
   public function __construct(?string $entitled = null, array $choices = array(), string $path = null, bool $isGranted = true, string $domainId = DomainsManagement::DOMAIN_ID_MASTER, array $options = array())
   {
+    if(!array_key_exists("templatePath", $options))
+    {
+      $options["templatePath"] = "@AustralSeo/List/Components/urlParameterStatus.html.twig";
+    }
     parent::__construct("status", $entitled, $path, $options);
     $this->fieldname = UrlParameterInterface::CHOICE_VALUE_FIELDNAME;
     $this->domainId = $domainId;
+    if($this->options["viewDomainName"] !== null)
+    {
+      $this->viewDomainName = $this->options["viewDomainName"];
+    }
     $this->choices = count($choices) ? $choices : array(
       UrlParameterInterface::STATUS_PUBLISHED       => array(
         "entitled" => "choices.status.".UrlParameterInterface::STATUS_PUBLISHED,
@@ -95,6 +109,15 @@ class UrlParameterStatus extends ColumnWithPath
       )
     );
     $this->isGranted = $isGranted;
+  }
+
+  /**
+   * @param OptionsResolver $resolver
+   */
+  protected function configureOptions(OptionsResolver $resolver)
+  {
+    parent::configureOptions($resolver);
+    $resolver->setDefault("viewDomainName", null);
   }
 
   /**
@@ -154,23 +177,17 @@ class UrlParameterStatus extends ColumnWithPath
   /**
    * @param EntityInterface|UrlParameterTrait $object
    *
-   * @return mixed|null
+   * @return array|null
    */
   public function getter($object)
   {
-    if($object instanceof TranslateMasterInterface)
+    $urlParameters = $object->getUrlParameters();
+    foreach ($urlParameters as $urlParametersByDomain)
     {
-      $urlParametersStatus = array();
-      /** @var TranslateChildInterface $translate */
-      foreach ($object->getTranslates() as $translate)
-      {
-        $urlParameter = $object->getUrlParameter($this->domainId, $translate->getLanguage());
-        $urlParametersStatus[$translate->getLanguage()] = $urlParameter ? $urlParameter->getStatus() : null;
-      }
-      return $urlParametersStatus;
+      ksort($urlParametersByDomain);
     }
-    $urlParameter = $object->getUrlParameter($this->domainId);
-    return $urlParameter ? $urlParameter->getStatus() : null;
+    ksort($urlParameters);
+    return $urlParameters;
   }
 
   /**
@@ -213,6 +230,16 @@ class UrlParameterStatus extends ColumnWithPath
       $actions[$value] = $action;
     }
     return $actions;
+  }
+
+  /**
+   * getViewDomainName
+   *
+   * @return bool
+   */
+  public function getViewDomainName(): bool
+  {
+    return $this->viewDomainName;
   }
 
 }

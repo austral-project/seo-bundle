@@ -40,12 +40,20 @@ trait UrlParameterTrait
     {
       $urlParameters = $urlParameters[$domainId];
     }
+    elseif($domainId === DomainsManagement::DOMAIN_ID_MASTER)
+    {
+      $urlParameters = AustralTools::first($urlParameters);
+    }
     if(method_exists($this, "getLanguageCurrent"))
     {
       $urlParameters = AustralTools::getValueByKey($urlParameters, $language ?? $this->getLanguageCurrent());
     }
     if(is_array($urlParameters)) {
-      return AustralTools::first($urlParameters);
+      $urlParameters = AustralTools::first($urlParameters);
+    }
+    if($urlParameters instanceof UrlParameter)
+    {
+      return $urlParameters;
     }
     return null;
   }
