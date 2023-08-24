@@ -106,7 +106,7 @@ class DoctrineListener implements EventSubscriber
           /** @var UrlParameter $urlParameter */
           foreach ($urlParametersSelected as $urlParameter)
           {
-            $urlParameters[$urlParameter->getLanguage()][] = $urlParameter;
+            $urlParameters[$urlParameter->getDomainId()][$urlParameter->getLanguage()] = $urlParameter;
           }
         }
       }
@@ -116,7 +116,7 @@ class DoctrineListener implements EventSubscriber
         /** @var UrlParameter $urlParameter */
         foreach ($urlParametersSelected as $urlParameter)
         {
-          $urlParameters[$urlParameter->getLanguage()][] = $urlParameter;
+          $urlParameters[$urlParameter->getDomainId()][$urlParameter->getLanguage()] = $urlParameter;
         }
       }
       $object->setUrlParameters($urlParameters);
