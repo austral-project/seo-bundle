@@ -270,6 +270,10 @@ class UrlParameterManagement
               $urlParameterForAllDomain->setPathLast($path);
               $urlParameterForAllDomain->setLanguage($language);
               $urlParameterForAllDomain->setObjectRelation($urlParameter->getObjectRelation());
+              if(array_key_exists($urlParameter->getObjectRelation(), $objectsForAllDomain))
+              {
+                $objectsForAllDomain[$urlParameter->getObjectRelation()]->addUrlParameter($urlParameter);
+              }
               $urlParametersEntityByDomain[DomainsManagement::DOMAIN_ID_FOR_ALL_DOMAINS][$language] [$urlParameterForAllDomain->getId()]= $urlParameterForAllDomain;
             }
           }
