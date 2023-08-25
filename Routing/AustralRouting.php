@@ -112,7 +112,6 @@ class AustralRouting
       $domainId = $domainId === "current" ? $object->getDomainId() : $domainId;
     }
     $domain = $domainId === "current" ? $this->domainsManagement->getCurrentDomain() : $this->domainsManagement->getDomainById($domainId);
-    $domain = $domain->getDomainByEnv($this->httpConfiguration->get("env.current"));
     $domainId = $domain->getId();
     if($object)
     {
@@ -131,8 +130,9 @@ class AustralRouting
       }
     }
 
+    $domainContext = $domain->getDomainByEnv($this->httpConfiguration->get("env.current"));
     /** @var RequestContext $requestContext */
-    $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainId, false);
+    $requestContext = $this->domainsManagement->getRequestContextByDomainId($domainContext->getId(), false);
     if($requestContext && $requestContext->getHost() !== $this->router->getContext()->getHost())
     {
       $this->router->setContext($requestContext);
