@@ -6,39 +6,36 @@
   {% for language, urlParameter in urlParametersByDomain %}
     
     {% if col.value|length > 1 and domainNameIsView == false and  col.viewDomainName == true  %}
-      <span class="domain-name">{{  urlParameter.domain.name|default() }}</span>
+      <span class="domain-name">{{  urlParameter.domain.urlParameterStatusName|default() }}</span>
       {% set domainNameIsView = true %}
     {% endif %}
-    
-                                  <div class="list-objects_content-choices">
-                                    {% if urlParametersByDomain|length > 1%}
-                                        {% set actionsParameters = {"__language__": language, "id": row.object.id} %}
-                                        <a data-click-actions="reload" data-reload-elements-key="container" href="{{ module.generateUrl("edit", actionsParameters) }}" class="content-language link">
-                                          {{ language }}
-                                        </a>
-                                      {% endif %}
-                                    {% set current = urlParameter.status %}
-                                    {% set elements = {} %}
-                                    
-                                    {% for value, action in col.actions(actionsParameters) %}
-                                      {% set elements = elements|merge({
-                                        (value): {
-                                          url: action.path,
-                                          entitled: action.entitled|trans({}, list.mapper.translateDomain),
-                                          style: action.attr().style
-                                        }
-                                      }) %}
-                                    {% endfor %}
-                                    
-                                    {{ include("@AustralDesign/Components/ChoiceElement/choice-element.html.twig",
-                                      {
-                                        direction:      "vertical-line",
-                                        class:          "no-border",
-                                        current:        current,
-                                        choices:        elements
-                                      }
-                                    )}}
-                                  </div>
+    <div class="list-objects_content-choices">
+      {% if urlParametersByDomain|length > 1%}
+          {% set actionsParameters = {"__language__": language, "id": row.object.id} %}
+          <a data-click-actions="reload" data-reload-elements-key="container" href="{{ module.generateUrl("edit", actionsParameters) }}" class="content-language link">
+            {{ language }}
+          </a>
+        {% endif %}
+      {% set current = urlParameter.status %}
+      {% set elements = {} %}
+      {% for value, action in col.actions(actionsParameters) %}
+        {% set elements = elements|merge({
+          (value): {
+            url: action.path,
+            entitled: action.entitled|trans({}, list.mapper.translateDomain),
+            style: action.attr().style
+          }
+        }) %}
+      {% endfor %}
+      {{ include("@AustralDesign/Components/ChoiceElement/choice-element.html.twig",
+        {
+          direction:      "vertical-line",
+          class:          "no-border",
+          current:        current,
+          choices:        elements
+        }
+      )}}
+    </div>
       {% endfor %}
   </div>
 {% endfor %}
