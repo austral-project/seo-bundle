@@ -67,9 +67,9 @@ class UrlParameterManagement
   protected UrlParameterMigrate $urlParameterMigrate;
 
   /**
-   * @var Debug|null
+   * @var Debug
    */
-  protected ?Debug $debug;
+  protected Debug $debug;
 
   /**
    * @var string
@@ -119,7 +119,7 @@ class UrlParameterManagement
    * @param UrlParameterEntityManager $urlParameterEntityManager
    * @param DomainsManagement $domainsManagement
    * @param UrlParameterMigrate $urlParameterMigrate
-   * @param Debug|null $debug
+   * @param Debug $debug
    */
   public function __construct(Mapping $mapping,
     EventDispatcherInterface $dispatcher,
@@ -127,7 +127,7 @@ class UrlParameterManagement
     UrlParameterEntityManager $urlParameterEntityManager,
     DomainsManagement $domainsManagement,
     UrlParameterMigrate $urlParameterMigrate,
-    ?Debug $debug
+    Debug $debug
   )
   {
     $this->mapping = $mapping;
@@ -168,7 +168,7 @@ class UrlParameterManagement
    */
   public function initialize(bool $reload = false): UrlParameterManagement
   {
-    $this->debug ? $this->debug->stopWatchStart("austral.url_parameter_management.initialize", $this->debugContainer) : null;
+    $this->debug->stopWatchStart("austral.url_parameter_management.initialize", $this->debugContainer);
 
     $entitiesMappingForAllDomain = array();
     $urlPathWithLastPathForAllDomain = array();
@@ -215,7 +215,7 @@ class UrlParameterManagement
       }
     }
 
-    $this->debug ? $this->debug->stopWatchStop("austral.url_parameter_management.initialize") : null;
+    $this->debug->stopWatchStop("austral.url_parameter_management.initialize");
     $urlParametersEntityByDomain = array();
 
     /** @var DomainInterface $domain */
@@ -342,7 +342,7 @@ class UrlParameterManagement
    */
   public function addUrlParametersByDomain(DomainInterface $domain, string $language, array $urlParametersEntityByDomain = array()): UrlParameterManagement
   {
-    $this->debug ? $this->debug->stopWatchStart("austral.url_parameter.build", $this->debugContainer) : null;
+    $this->debug->stopWatchStart("austral.url_parameter.build", $this->debugContainer);
     $urlParametersByDomain = (new UrlParametersByDomain(
       $this->dispatcher,
       $domain,
@@ -355,7 +355,7 @@ class UrlParameterManagement
     ))->build(AustralTools::getValueByKey($urlParametersEntityByDomain, $language, array()));
     $this->urlParametersByDomains[$domain->getId()][$language] = $urlParametersByDomain;
     $this->domainIdByUrlParameterId = array_merge($this->domainIdByUrlParameterId, $urlParametersByDomain->getDomainIdByUrlParameterId());
-    $this->debug ? $this->debug->stopWatchStop("austral.url_parameter.build") : null;
+    $this->debug->stopWatchStop("austral.url_parameter.build");
     return $this;
   }
 
