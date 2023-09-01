@@ -145,7 +145,7 @@ class AustralRouting
     {
       if(str_contains($route->getPath(), "{_locale}"))
       {
-        $parameters['_locale'] = $this->domainsManagement->getHttpRequest()->getLanguage();
+        $parameters['_locale'] = array_key_exists("_locale", $parameters) ? $parameters['_locale'] : $this->domainsManagement->getHttpRequest()->getLanguage();
       }
     }
 
