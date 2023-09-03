@@ -147,6 +147,10 @@ class AustralRouting
       {
         $parameters['_locale'] = array_key_exists("_locale", $parameters) ? $parameters['_locale'] : $this->domainsManagement->getHttpRequest()->getLanguage();
       }
+      elseif(array_key_exists("_locale", $parameters))
+      {
+        unset($parameters['_locale']);
+      }
     }
 
     return $this->router->generate($routeName, $parameters, $referenceType);
