@@ -598,6 +598,10 @@ class UrlParameterManagement
         }
         else
         {
+          if(count($this->getUrlParametersByDomains()) <= 0)
+          {
+            $this->initialize(true);
+          }
           foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
           {
             /** @var UrlParametersByDomain $urlParametersByDomain */
