@@ -21,7 +21,7 @@
       {% for value, action in col.actions(actionsParameters) %}
         {% set elements = elements|merge({
           (value): {
-            url: action.path,
+            url: action.path~(col.value|length > 1 ? "?urlParameterId="~urlParameter.id : ""),
             entitled: action.entitled|trans({}, list.mapper.translateDomain),
             style: action.attr().style
           }

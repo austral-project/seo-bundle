@@ -573,8 +573,29 @@ class UrlParameterManagement
   }
 
   /**
+   * @param string $urlParameterId
+   * @return UrlParameterInterface|null
+   */
+  public function getUrlParametersById(string $urlParameterId): ?UrlParameterInterface
+  {
+    $urlParameter = null;
+    foreach ($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
+    {
+      /** @var UrlParametersByDomain $urlParametersByDomain */
+      foreach ($urlParametersByDomainAndLanguages as $urlParametersByDomain)
+      {
+        if($urlParameterById = $urlParametersByDomain->getUrlParameterById($urlParameterId))
+        {
+          $urlParameter = $urlParameterById;
+        }
+      }
+    }
+    return $urlParameter;
+  }
+
+  /**
    * @param EntityInterface $object
-   *
+   * @param string|null $language
    * @return array
    * @throws \Exception
    */
