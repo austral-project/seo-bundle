@@ -23,7 +23,7 @@ class QueryConditionUrlParameterStatus extends QueryConditionUrlParameter
    */
   public function getQuery(string $alias): string
   {
-    return is_array($this->value) ? "{$alias}.status IN (:urlParameterStatus)" : "{$alias}.status = :urlParameterStatus";
+    return is_array($this->value) ? "{$alias}.status IN (:{$alias}_urlParameterStatus)" : "{$alias}.status = :{$alias}_urlParameterStatus";
   }
 }
 

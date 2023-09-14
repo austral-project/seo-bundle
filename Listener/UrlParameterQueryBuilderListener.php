@@ -73,13 +73,13 @@ class UrlParameterQueryBuilderListener
     if($queryCondition instanceof QueryConditionUrlParameterStatus)
     {
       $queryBuilderEvent->getQueryBuilder()->{$queryCondition->getConditionType()}($queryCondition->getQuery($urlParameterAlias))
-        ->setParameter("urlParameterStatus", $queryCondition->getValue(), is_array($queryCondition->getValue()) ? Connection::PARAM_STR_ARRAY : null)
+        ->setParameter("{$urlParameterAlias}_urlParameterStatus", $queryCondition->getValue(), is_array($queryCondition->getValue()) ? Connection::PARAM_STR_ARRAY : null)
       ;
     }
-    elseif($queryCondition instanceof QueryConditionUrlParameterDomain)
+    if($queryCondition instanceof QueryConditionUrlParameterDomain)
     {
       $queryBuilderEvent->getQueryBuilder()->{$queryCondition->getConditionType()}($queryCondition->getQuery($urlParameterAlias))
-        ->setParameter("urlParameterDomainId", $queryCondition->getValue(), is_array($queryCondition->getValue()) ? Connection::PARAM_STR_ARRAY : null)
+        ->setParameter("{$urlParameterAlias}_urlParameterDomainId", $queryCondition->getValue(), is_array($queryCondition->getValue()) ? Connection::PARAM_STR_ARRAY : null)
       ;
     }
   }

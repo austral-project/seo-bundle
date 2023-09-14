@@ -23,6 +23,6 @@ class QueryConditionUrlParameterDomain extends QueryConditionUrlParameter
    */
   public function getQuery(string $alias): string
   {
-    return is_array($this->value) ? "{$alias}.domainId IN (:urlParameterDomainId)" : "{$alias}.domainId = :urlParameterDomainId";
+    return is_array($this->value) ? "{$alias}.domainId IN (:{$alias}_urlParameterDomainId)" : "{$alias}.domainId = :{$alias}_urlParameterDomainId";
   }
 }
