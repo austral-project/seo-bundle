@@ -83,6 +83,9 @@ fields:
   inSitemap:
     entitled:                                   Sitemap
     information:                                Used to indicate whether this page can be to add in the sitemap.
+  inCacheEnabled:
+    entitled:                                   Cache HTTP
+    information:                                Allows you to enable or disable HTTP caching of the page in order to speed up its display.
   urlSource:
     entitled:                                   Source Url
   urlDestination:
@@ -102,6 +105,7 @@ groups:
   seo:                                          Seo of the page
   robots:                                       Search engine
   social_network:                               Sharing on social network
+  cache:                                        Cache
 
 
 choices:

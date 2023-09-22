@@ -363,7 +363,22 @@ class FormListener
         )
       ->end();
 
-
+    if (class_exists('Austral\CacheBundle\AustralCacheBundle'))
+    {
+      $urlParameterFieldset
+        ->addGroup("cache", "groups.cache")
+        ->setDirection(GroupFields::DIRECTION_COLUMN)
+          ->addGroup("robots")
+            ->setStyle(GroupFields::STYLE_BOOLEAN)
+            ->add(Field\SwitchField::create("inCacheEnabled", array(
+                  "entitled"  =>  "fields.inCacheEnabled.entitled",
+                  "helper"    =>  "fields.inCacheEnabled.information"
+                )
+              )
+            )
+          ->end()
+        ->end();
+    }
 
     $urlParameterFieldset
       ->addGroup("social_network", "groups.social_network")

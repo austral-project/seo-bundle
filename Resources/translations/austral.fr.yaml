@@ -91,6 +91,9 @@ fields:
   inSitemap:
     entitled:                                   Sitemap
     information:                                Permet d’indiquer si une page peut être indexée par les moteurs de recherche.
+  inCacheEnabled:
+    entitled:                                   Cache HTTP
+    information:                                Permet d'activer ou non la mise en cache HTTP de la page afin d'accélérer l'affichage de celle-ci.
   urlSource:
     entitled:                                   Url source
   urlDestination:
@@ -110,6 +113,7 @@ groups:
   seo:                                          SEO de la page
   robots:                                       Moteurs de recherche
   social_network:                               Partage sur les réseaux sociaux
+  cache:                                        Cache
 
 choices:
   status:

@@ -185,6 +185,12 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   protected bool $inSitemap = true;
 
   /**
+   * @var boolean
+   * @ORM\Column(name="in_cache_enabled", type="boolean", nullable=false, options={"default": true})
+   */
+  protected bool $inCacheEnabled = true;
+
+  /**
    * @var string|null
    */
   protected ?string $keyLink = null;
@@ -762,6 +768,28 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   public function setInSitemap(bool $inSitemap): UrlParameter
   {
     $this->inSitemap = $inSitemap;
+    return $this;
+  }
+
+  /**
+   * getInCacheEnabled
+   *
+   * @return bool
+   */
+  public function getInCacheEnabled(): bool
+  {
+    return $this->inCacheEnabled;
+  }
+
+  /**
+   * setInCacheEnabled
+   *
+   * @param bool $inCacheEnabled
+   * @return $this
+   */
+  public function setInCacheEnabled(bool $inCacheEnabled): UrlParameter
+  {
+    $this->inCacheEnabled = $inCacheEnabled;
     return $this;
   }
 

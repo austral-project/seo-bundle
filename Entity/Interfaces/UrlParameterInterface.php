@@ -371,6 +371,21 @@ interface UrlParameterInterface
    */
   public function setIsTreeView(bool $isTreeView): UrlParameterInterface;
 
+  /**
+   * getInCacheEnabled
+   *
+   * @return bool
+   */
+  public function getInCacheEnabled(): bool;
+
+  /**
+   * setInCacheEnabled
+   *
+   * @param bool $inCacheEnabled
+   * @return UrlParameterInterface
+   */
+  public function setInCacheEnabled(bool $inCacheEnabled): UrlParameterInterface;
+
 }
 
     
