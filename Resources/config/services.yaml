@@ -6,6 +6,7 @@ services:
 
 
 ##### Austral Event Subscriber
+  Austral\SeoBundle\EventSubscriber\UrlParameterSubscriber: "@austral.seo.url_parameter.event_subscriber"
   austral.seo.url_parameter.event_subscriber:
     class:        Austral\SeoBundle\EventSubscriber\UrlParameterSubscriber
     tags:
@@ -57,12 +58,14 @@ services:
 
 ##### Listener #####
 
+  Austral\SeoBundle\Listener\DoctrineListener:  "@austral.seo.doctrine.listener"
   austral.seo.doctrine.listener:
     class:        Austral\SeoBundle\Listener\DoctrineListener
     arguments:    ["@austral.entity.mapping","@austral.seo.url_parameter.management", "@austral.seo.redirection.management"]
     tags:
       - { name: doctrine.event_subscriber, connection: default }
 
+  Austral\SeoBundle\Listener\EntityMappingListener: "@austral.seo.entity_mapping.listener"
   austral.seo.entity_mapping.listener:
     class:        Austral\SeoBundle\Listener\EntityMappingListener
     arguments:
@@ -70,12 +73,14 @@ services:
     tags:
       - { name: kernel.event_listener, event: "austral.event.entity.initialise.mapping", method: mapping }
 
+  Austral\SeoBundle\Listener\ElasticSearchListener: "@austral.seo.elastic_search.listener"
   austral.seo.elastic_search.listener:
     class:          Austral\SeoBundle\Listener\ElasticSearchListener
     arguments:      ["@austral.entity.mapping", "@austral.http.domains.management", "@austral.seo.url_parameter.management", "@austral.seo.routing"]
     tags:
       - { name: kernel.event_listener, event: "austral.elastic_search.select.objects", method: objects }
 
+  Austral\SeoBundle\Listener\EntityManagerListener: "@austral.seo.entity_manager.listener"
   austral.seo.entity_manager.listener:
     class:          Austral\SeoBundle\Listener\EntityManagerListener
     arguments:    ["@austral.seo.url_parameter.management"]
@@ -86,6 +91,7 @@ services:
       - { name: kernel.event_listener, event: "austral.entity_manager.delete", method: deleteUrlParameter }
       - { name: kernel.event_listener, event: "austral.entity_manager.push.after", method: generateUrlParameter }
 
+  Austral\SeoBundle\Listener\UrlParameterQueryBuilderListener:  "@austral.seo.query_builder.listener"
   austral.seo.query_builder.listener:
     class:        Austral\SeoBundle\Listener\UrlParameterQueryBuilderListener
     arguments:    ["@austral.seo.url_parameter.management", "@austral.http.domains.management"]
