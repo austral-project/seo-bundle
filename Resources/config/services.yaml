@@ -11,8 +11,8 @@ services:
     tags:
       - { name: kernel.event_subscriber }
 
-
 ##### Routing #####
+  Austral\SeoBundle\Routing\AustralRouting: "@austral.seo.routing"
   austral.seo.routing:
     class:        Austral\SeoBundle\Routing\AustralRouting
     arguments:
@@ -22,6 +22,7 @@ services:
       - "@austral.http.config"
 
 ##### Twig Extension
+  Austral\SeoBundle\TwigExtension\RoutingExtension: "@twig.extension.seo"
   twig.extension.seo:
     class:        Austral\SeoBundle\TwigExtension\RoutingExtension
     arguments:
@@ -31,6 +32,7 @@ services:
 
 ##### Services #####
 
+  Austral\SeoBundle\Services\UrlParameterManagement:  "@austral.seo.url_parameter.management"
   austral.seo.url_parameter.management:
     class:        Austral\SeoBundle\Services\UrlParameterManagement
     arguments:
@@ -42,10 +44,12 @@ services:
       - "@austral.seo.url_parameter.migrate"
       - "@austral.tools.debug"
 
+  Austral\SeoBundle\Services\RedirectionManagement: "@austral.seo.redirection.management"
   austral.seo.redirection.management:
     class: Austral\SeoBundle\Services\RedirectionManagement
     arguments: [ "@austral.seo.config", "@austral.entity_manager.redirection"]
 
+  Austral\SeoBundle\Services\UrlParameterMigrate: "@austral.seo.url_parameter.migrate"
   austral.seo.url_parameter.migrate:
     class: Austral\SeoBundle\Services\UrlParameterMigrate
     arguments: [         "@austral.entity.mapping", "@austral.entity_file.compression"]
@@ -91,21 +95,25 @@ services:
 ##### Entities Manager #####
 
   ##### Url Parameter Entity Manager
+  Austral\SeoBundle\EntityManager\UrlParameterEntityManager:  "@austral.entity_manager.url_parameter"
   austral.entity_manager.url_parameter:
     class:        Austral\SeoBundle\EntityManager\UrlParameterEntityManager
     arguments:    [ "@doctrine.orm.entity_manager",  "@event_dispatcher", "%austral.entity.url_parameter.class%" ]
 
   ##### Redirection Entity Manager
+  Austral\SeoBundle\EntityManager\RedirectionEntityManager: "@austral.entity_manager.redirection"
   austral.entity_manager.redirection:
     class:        Austral\SeoBundle\EntityManager\RedirectionEntityManager
     arguments:    [ "@doctrine.orm.entity_manager",  "@event_dispatcher", "%austral.entity.redirection.class%" ]
 
 ##### Parameters #####
+  Austral\SeoBundle\Configuration\SeoConfiguration: "@austral.seo.config"
   austral.seo.config:
     class:        Austral\SeoBundle\Configuration\SeoConfiguration
     arguments:    ["%austral_entity_seo%"]
 
 ##### Form Type #####
+  Austral\SeoBundle\Form\Type\UrlParameterFormType: "@austral.seo.url_parameter_form_type"
   austral.seo.url_parameter_form_type:
     class:        Austral\SeoBundle\Form\Type\UrlParameterFormType
     arguments:    [ "@security.authorization_checker" ]
