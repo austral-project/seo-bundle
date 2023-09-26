@@ -49,8 +49,8 @@ parameters:
         redirection:
           enabled:                "%austral.admin.modules.entity_seo_bundle.seoConfig.redirection.enabled%"
           name:                   "Redirection"
-          pictoTile:              "parameters"
           picto:                  "austral-picto-repeat"
+          pictoTile:              "domain"
           route:                  "redirection"
           class:                  "%austral.admin.class.redirection.class%"
           translate:              "female_c"
@@ -59,7 +59,7 @@ parameters:
           enabled:                "%austral.admin.modules.entity_seo_bundle.seoConfig.seo.enabled%"
           name:                   "Seo"
           picto:                  "austral-picto-file-text"
-          pictoTile:              "parameters"
+          pictoTile:              "target"
           route:                  "seo"
           class:                  "%austral.admin.class.seo.class%"
           actions:
@@ -71,7 +71,7 @@ parameters:
           enabled:                "%austral.admin.modules.entity_seo_bundle.seoConfig.urlConflict.enabled%"
           name:                   "Urls conflicts"
           picto:                  "austral-picto-file-text"
-          pictoTile:              "parameters"
+          pictoTile:              "warning"
           route:                  "url-conflict"
           class:                  "%austral.admin.class.urlConflict.class%"
           actions:
