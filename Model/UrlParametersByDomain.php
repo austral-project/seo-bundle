@@ -226,7 +226,7 @@ class UrlParametersByDomain
   {
     $treeParent = array();
     $treeParent["/{$urlParameter->getPath()}"] = $urlParameter;
-    $this->treeParentByObject($urlParameter->getObject(), $treeParent);
+    $this->treeParentByObject($urlParameter->getObject(), $treeParent, $urlParameter->getDomainId());
     if(!array_key_exists("/", $treeParent))
     {
       $treeParent["/"] = $this->getUrlParameterByPath("");
@@ -237,20 +237,22 @@ class UrlParametersByDomain
 
   /**
    * treeParentByObject
+   *
    * @param $object
+   * @param string|null $domainId
    * @param array $treeParent
    * @return void
    */
-  protected function treeParentByObject($object, array &$treeParent = array())
+  protected function treeParentByObject($object, array &$treeParent = array(), ?string $domainId = DomainsManagement::DOMAIN_ID_MASTER)
   {
     if($object instanceof TreePageInterface)
     {
-      if($parent = $object->getTreePageParent())
+      if($parent = $object->getTreePageParent($domainId))
       {
         if($urlParameterParent = $this->getUrlParameterByObjectClassnameAndId($parent->getClassnameForMapping(), $parent->getId()))
         {
           $treeParent["/{$urlParameterParent->getPath()}"] = $urlParameterParent;
-          $this->treeParentByObject($urlParameterParent->getObject(), $treeParent);
+          $this->treeParentByObject($urlParameterParent->getObject(), $treeParent, $domainId);
         }
       }
     }
