@@ -219,10 +219,10 @@ class UrlParametersByDomain
 
   /**
    * treeParentByUrlParameter
-   * @param UrlParameter $urlParameter
+   * @param UrlParameterInterface $urlParameter
    * @return array
    */
-  public function treeParentByUrlParameter(UrlParameter $urlParameter): array
+  public function treeParentByUrlParameter(UrlParameterInterface $urlParameter): array
   {
     $treeParent = array();
     $treeParent["/{$urlParameter->getPath()}"] = $urlParameter;
