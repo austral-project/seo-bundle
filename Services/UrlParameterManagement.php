@@ -217,13 +217,21 @@ class UrlParameterManagement
 
     $this->debug->stopWatchStop("austral.url_parameter_management.initialize");
     $urlParametersEntityByDomain = array();
+    $domainsLanguages = array();
 
     /** @var DomainInterface $domain */
     foreach($this->domainsManagement->getDomainsWithoutVirtual() as $domain)
     {
       foreach ($this->languages as $language)
       {
-        $urlParametersEntityByDomain[$domain->getId()][$language] = array();
+        if($domain->getLanguage() == $language || !$domain->getLanguage())
+        {
+          $urlParametersEntityByDomain[$domain->getId()][$language] = array();
+          if($domain->getIsTranslate() && $domain->getMaster())
+          {
+            $domainsLanguages["{$domain->getMaster()->getId()}_{$language}"] = $domain->getId();
+          }
+        }
       }
     }
     if($this->domainsManagement->getEnabledDomainWithoutVirtual())
@@ -246,7 +254,10 @@ class UrlParameterManagement
       foreach($urlParameters as $urlParameter)
       {
         $urlParametersEntityByDomain[$urlParameter->getDomainId()][$language][$urlParameter->getId()] = $urlParameter;
-
+        if(array_key_exists("{$urlParameter->getDomainId()}_{$language}", $domainsLanguages))
+        {
+          $urlParametersEntityByDomain[$domainsLanguages["{$urlParameter->getDomainId()}_{$language}"]][$language][$urlParameter->getId()] = $urlParameter;
+        }
         if($this->domainsManagement->getEnabledDomainWithoutVirtual())
         {
           if(array_key_exists($urlParameter->getObjectClass(), $entitiesMappingForAllDomain))

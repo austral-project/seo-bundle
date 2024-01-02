@@ -539,8 +539,16 @@ class UrlParametersByDomain
     {
       $this->urlParameters[$urlParameter->getId()] = $urlParameter;
     }
-    $urlParameter->setDomainId($this->domain->getId());
-    $urlParameter->setDomain($this->domain);
+    if($this->domain->getIsTranslate() && $this->domain->getMaster())
+    {
+      $urlParameter->setDomainId($this->domain->getMaster()->getId());
+      $urlParameter->setDomain($this->domain->getMaster());
+    }
+    else
+    {
+      $urlParameter->setDomainId($this->domain->getId());
+      $urlParameter->setDomain($this->domain);
+    }
     if($this->isVirtual) {
       $urlParameter->setKeyLink("{$urlParameter->getObjectClassShort()}::{$urlParameter->getObjectId()}");
     }
@@ -710,8 +718,16 @@ class UrlParametersByDomain
     $urlParameter->setObjectRelation("{$object->getClassnameForMapping()}::{$object->getId()}");
     $urlParameter->setObjectKeyname("{$object->getKeyname()}");
     $urlParameter->setObject($object);
-    $urlParameter->setDomainId($this->domain->getId());
-    $urlParameter->setDomain($this->domain);
+    if($this->domain->getIsTranslate() && $this->domain->getMaster())
+    {
+      $urlParameter->setDomainId($this->domain->getMaster()->getId());
+      $urlParameter->setDomain($this->domain->getMaster());
+    }
+    else
+    {
+      $urlParameter->setDomainId($this->domain->getId());
+      $urlParameter->setDomain($this->domain);
+    }
     $this->urlParameters[$urlParameter->getId()] = $urlParameter;
     $this->objectsMapping["{$object->getClassnameForMapping()}::{$object->getId()}"] = $object;
     return $urlParameter;
@@ -810,7 +826,7 @@ class UrlParametersByDomain
       $this->generatePathUrlParameter($urlParameter, $object);
 
       $this->recoveryValuesAustral30($urlParameter, $object);
-
+      $object->addUrlParameter($urlParameter);
       $this->hydrate($urlParameter);
       if(!$this->isVirtual) {
         $this->urlParameterEntityManager->update($urlParameter, false);
@@ -853,7 +869,7 @@ class UrlParametersByDomain
     {
       if($urlParameterParent = $this->getUrlParameterByObject($treePageParent))
       {
-        $urlParameter->setPath(($urlParameterParent->getPath() ? "{$urlParameterParent->getPath()}/" : null )."{$urlParameter->getPathLast()}");
+        $urlParameter->setPath(($urlParameterParent->getPath() ? "{$urlParameterParent->getPath()}/" : "" )."{$urlParameter->getPathLast()}");
       }
     }
     else

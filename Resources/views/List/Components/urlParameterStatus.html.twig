@@ -11,7 +11,7 @@
     {% endif %}
     <div class="list-objects_content-choices">
       {% if urlParametersByDomain|length > 1%}
-          {% set actionsParameters = {"__language__": language, "id": row.object.id} %}
+          {% set actionsParameters = {"language": language, "id": row.object.id} %}
           <a data-click-actions="reload" data-reload-elements-key="container" href="{{ module.generateUrl("edit", actionsParameters) }}" class="content-language link">
             {{ language }}
           </a>

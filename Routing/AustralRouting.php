@@ -113,6 +113,7 @@ class AustralRouting
     }
     $domain = $domainId === "current" ? $this->domainsManagement->getCurrentDomain() : $this->domainsManagement->getDomainById($domainId);
     $domainId = $domain->getId();
+    $urlParameter = null;
     if($object)
     {
       if(!$object instanceof UrlParameterInterface)
@@ -128,6 +129,10 @@ class AustralRouting
           $parameters["slug"] = $urlParameter->getPath();
         }
       }
+    }
+    if($urlParameter && $domain->getDomainTranslateByLanguage($urlParameter->getLanguage()))
+    {
+      $domain = $domain->getDomainTranslateByLanguage($urlParameter->getLanguage());
     }
 
     $domainContext = $domain->getDomainByEnv($this->httpConfiguration->get("env.current"));
