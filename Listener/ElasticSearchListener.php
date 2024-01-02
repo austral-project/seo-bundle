@@ -82,7 +82,7 @@ class ElasticSearchListener
     {
       $objectsToHydrate = array();
       /** @var ObjectToHydrate $objectToHydrate */
-      foreach ($elasticSearchSelectObjectsEvent->getObjectsToHydrate() as $objectToHydrate)
+      foreach ($elasticSearchSelectObjectsEvent->getObjectsToHydrate() as $key => $objectToHydrate)
       {
         /** @var UrlParameter $urlParameter */
         foreach($this->urlParameterManagement->getUrlParametersByObject($objectToHydrate->getObject()) as $urlParameter)
@@ -90,6 +90,7 @@ class ElasticSearchListener
           $objectToHydrateClone = clone $objectToHydrate;
           $objectToHydrateClone->addValuesParameters(Result::VALUE_REF_TITLE, $urlParameter->getSeoTitle());
           $objectToHydrateClone->addValuesParameters(Result::VALUE_REF_DESCRIPTION, $urlParameter->getSeoDescription());
+          $objectToHydrateClone->addValuesParameters(Result::VALUE_STATUS, $urlParameter->getStatus());
           $objectToHydrateClone->addValuesParameters(Result::VALUE_REF_URL, $this->australRouting->getPath("austral_website_page", $objectToHydrate->getObject(), array(), $urlParameter->getDomainId()));
           $objectToHydrateClone->addValuesParameters("domain_id", $urlParameter->getDomainId());
           $objectToHydrateClone->setElasticSearchId(sprintf("%s_%s", $objectToHydrate->getElasticSearchId(), $urlParameter->getId()));
