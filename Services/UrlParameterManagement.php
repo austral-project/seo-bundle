@@ -460,19 +460,24 @@ class UrlParameterManagement
   }
 
   /**
+   * @param string|null $currentLanguage
    * @return array
    */
-  public function getUrlParametersByDomainsWithTree(): array
+  public function getUrlParametersByDomainsWithTree(string $currentLanguage = null): array
   {
     $urlParametersByDomainsWithTree = array();
     /** @var array $urlParametersByDomainAndLanguage */
     foreach($this->getUrlParametersByDomains() as $urlParametersByDomainAndLanguage)
     {
-      $urlParametersByDomain = $urlParametersByDomainAndLanguage[$this->currentLanguage];
-      $urlParametersByDomainsWithTree[] = array(
-        "domain"  =>  $urlParametersByDomain->getDomain(),
-        "urls"    =>  $urlParametersByDomain->getTreeUrlParameters()
-      );
+
+      $urlParametersByDomain = $urlParametersByDomainAndLanguage[$currentLanguage ?? $this->currentLanguage];
+      if(!$urlParametersByDomain->getDomain()->getIsTranslate())
+      {
+        $urlParametersByDomainsWithTree[] = array(
+          "domain" => $urlParametersByDomain->getDomain(),
+          "urls" => $urlParametersByDomain->getTreeUrlParameters()
+        );
+      }
     }
     if($this->domainsManagement->getEnabledDomainWithoutVirtual())
     {
