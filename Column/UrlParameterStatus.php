@@ -182,9 +182,10 @@ class UrlParameterStatus extends ColumnWithPath
   public function getter($object)
   {
     $urlParameters = $object->getUrlParameters();
-    foreach ($urlParameters as $urlParametersByDomain)
+    foreach ($urlParameters as  $key => $urlParametersByDomain)
     {
       ksort($urlParametersByDomain);
+      $urlParameters[$key] = $urlParametersByDomain;
     }
     ksort($urlParameters);
     return $urlParameters;
