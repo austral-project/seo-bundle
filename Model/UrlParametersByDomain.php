@@ -931,6 +931,17 @@ class UrlParametersByDomain
       {
         if($this->objectIsMapping($child))
         {
+          if($child instanceof TranslateMasterInterface)
+          {
+            if($object instanceof TranslateMasterInterface)
+            {
+              $child->setCurrentLanguage($object->getLanguageCurrent());
+            }
+            else
+            {
+              $child->setCurrentLanguage($this->currentLanguage);
+            }
+          }
           $this->generateUrlParameter($child);
         }
       }
@@ -941,6 +952,17 @@ class UrlParametersByDomain
       {
         if($this->objectIsMapping($child))
         {
+          if($child instanceof TranslateMasterInterface)
+          {
+            if($object instanceof TranslateMasterInterface)
+            {
+              $child->setCurrentLanguage($object->getLanguageCurrent());
+            }
+            else
+            {
+              $child->setCurrentLanguage($this->currentLanguage);
+            }
+          }
           $this->generateUrlParameter($child);
         }
       }
