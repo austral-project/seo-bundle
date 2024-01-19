@@ -25,5 +25,15 @@ class QueryConditionUrlParameterStatus extends QueryConditionUrlParameter
   {
     return is_array($this->value) ? "{$alias}.status IN (:{$alias}_urlParameterStatus)" : "{$alias}.status = :{$alias}_urlParameterStatus";
   }
+
+  /**
+   * @param string $alias
+   *
+   * @return string
+   */
+  public function getQueryTranslate(string $alias): string
+  {
+    return "{$alias}.language = :{$alias}_language";
+  }
 }
 
