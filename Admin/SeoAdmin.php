@@ -91,7 +91,7 @@ class SeoAdmin extends Admin
 
     if(!$domainId = $this->module->getFilterDomainId())
     {
-      $domainId =$this->container->get('austral.http.domains.management')->getCurrentDomain()->getId();
+      $domainId = $this->container->get('austral.http.domains.management')->getCurrentDomain()?->getId();
     }
 
     $formMapperMaster = new FormMapper($this->container->get('event_dispatcher'));
