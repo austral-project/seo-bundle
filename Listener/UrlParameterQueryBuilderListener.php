@@ -75,7 +75,7 @@ class UrlParameterQueryBuilderListener
       $queryBuilderEvent->getQueryBuilder()->{$queryCondition->getConditionType()}($queryCondition->getQuery($urlParameterAlias))
         ->setParameter("{$urlParameterAlias}_urlParameterStatus", $queryCondition->getValue(), is_array($queryCondition->getValue()) ? Connection::PARAM_STR_ARRAY : null)
       ;
-      if($this->domainsManagement->getCurrentDomain()) {
+      if($this->domainsManagement->getCurrentDomain() && $this->domainsManagement->getCurrentDomain()->getLanguage()) {
         $queryBuilderEvent->getQueryBuilder()->andWhere($queryCondition->getQueryTranslate($urlParameterAlias))
           ->setParameter("{$urlParameterAlias}_language", $this->domainsManagement->getCurrentDomain()->getLanguage())
         ;
