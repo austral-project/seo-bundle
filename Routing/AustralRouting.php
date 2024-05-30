@@ -101,6 +101,7 @@ class AustralRouting
    */
   public function generate(string $routeName, ?EntityInterface $object = null, array $parameters = [], ?string $domainId = "current", int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): ?string
   {
+    $routerDefaultContext = $this->router->getContext();
     $slugIsRequired = false;
     if($route = $this->router->getRouteCollection()->get($routeName))
     {
@@ -157,8 +158,9 @@ class AustralRouting
         unset($parameters['_locale']);
       }
     }
-
-    return $this->router->generate($routeName, $parameters, $referenceType);
+    $urlGenerate = $this->router->generate($routeName, $parameters, $referenceType);
+    $this->router->setContext($routerDefaultContext);
+    return $urlGenerate;
   }
 
 
