@@ -24,7 +24,7 @@ class AustralSeoBundle extends Bundle
   /**
    * @param ContainerBuilder $container
    */
-  public function build(ContainerBuilder $container)
+  public function build(ContainerBuilder $container): void
   {
     parent::build($container);
     $container->addCompilerPass(new DoctrineResolveTargetEntityPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 1000);
