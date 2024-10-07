@@ -14,6 +14,7 @@ use Austral\AdminBundle\Admin\Admin;
 use Austral\AdminBundle\Admin\Event\ListAdminEvent;
 use Austral\AdminBundle\Module\Modules;
 use Austral\EntityBundle\Mapping\EntityMapping;
+use Austral\FormBundle\Mapper\FormMappers;
 use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\UrlParameter;
@@ -25,6 +26,7 @@ use Austral\FormBundle\Form\Type\FormTypeInterface;
 use Austral\FormBundle\Mapper\FormMapper;
 use Doctrine\Common\Util\ClassUtils;
 use ReflectionException;
+use Symfony\Component\Form\Forms;
 
 /**
  * UrlConflict Admin .
@@ -63,12 +65,12 @@ class UrlConflictAdmin extends Admin
     $formsIsValide = true;
     $request = $listAdminEvent->getRequest();
 
-    $formMapperMaster = new FormMapper($this->container->get('event_dispatcher'));
-    $formMapperMaster->setTranslateDomain("austral")->setPathToTemplateDefault("@AustralAdmin/Form/Components/Fields");
+    /** @var FormMappers $formMappers */
+    $formMappers = $this->container->get('austral.form.mappers');
 
     /** @var Modules $modules */
     $modules = $this->container->get('austral.admin.modules');
-
+    $formFactory = Forms::createFormFactory();
     /** @var array $urlParametersByDomainAndLanguages */
     foreach($urlParameterManagement->getUrlParametersByDomains() as $urlParametersByDomainAndLanguages)
     {
@@ -95,22 +97,20 @@ class UrlConflictAdmin extends Admin
               }
             }
 
-            $formMapper = new FormMapper($this->container->get('event_dispatcher'));
+            $formMapper = $formMappers->createFormMapper("form_{$urlParameter->getId()}");
             $formMapper->setObject($urlParameter)
-              ->setName("form_{$urlParameter->getId()}")
+              ->setPathToTemplateDefault("@AustralAdmin/Form/Components/Fields")
               ->setFormTypeAction("edit")
               ->setTranslateDomain("austral");
             if($moduleObject)
             {
               $formMapper->setModule($moduleObject);
             }
-            $formMapperMaster->addSubFormMapper("form_{$urlParameter->getId()}", $formMapper);
 
             /** @var FormTypeInterface $formType */
             $formType = clone $this->container->get('austral.form.type.master')
               ->setClass(ClassUtils::getClass($urlParameter))
-              ->setFormMapper($formMapperMaster);
-
+              ->setFormMapper($formMapper);
 
             $formMapper->add(new PathField("pathLast", array(
                   "entitled"  =>  "fields.pathLast.entitled",
@@ -126,7 +126,10 @@ class UrlConflictAdmin extends Admin
               )
             );
 
-            $form = $this->container->get('form.factory')->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
+            $form = $listAdminEvent->getAdminHandler()
+              ->getFormFactory()
+              ->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
+
             if($request->getMethod() == 'POST')
             {
               $form->handleRequest($request);

@@ -14,6 +14,7 @@ use Austral\AdminBundle\Admin\Admin;
 use Austral\AdminBundle\Admin\Event\ListAdminEvent;
 use Austral\AdminBundle\Module\Modules;
 use Austral\EntityBundle\Mapping\EntityMapping;
+use Austral\FormBundle\Mapper\FormMappers;
 use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Configuration\SeoConfiguration;
@@ -27,6 +28,7 @@ use Austral\FormBundle\Mapper\FormMapper;
 use Doctrine\Common\Util\ClassUtils;
 use ReflectionException;
 use Austral\FormBundle\Field as Field;
+use Symfony\Component\Form\Forms;
 
 /**
  * Seo Admin .
@@ -94,14 +96,13 @@ class SeoAdmin extends Admin
       $domainId = $this->container->get('austral.http.domains.management')->getCurrentDomain()?->getId();
     }
 
-    $formMapperMaster = new FormMapper($this->container->get('event_dispatcher'));
-    $formMapperMaster->setTranslateDomain("austral")->setPathToTemplateDefault("@AustralAdmin/Form/Components/Fields");
+    /** @var FormMappers $formMappers */
+    $formMappers = $this->container->get('austral.form.mappers');
 
     /** @var Modules $modules */
     $modules = $this->container->get('austral.admin.modules');
 
     $urlParametersByDomainAndLanguages = $urlParameterManagement->getUrlParametersByDomain($domainId);
-
     /** @var UrlParametersByDomain $urlParametersByDomain */
     foreach($urlParametersByDomainAndLanguages as $language => $urlParametersByDomain)
     {
@@ -125,9 +126,10 @@ class SeoAdmin extends Admin
             }
           }
 
-          $formMapper = new FormMapper($this->container->get('event_dispatcher'));
+
+          $formMapper = $formMappers->createFormMapper("form_{$urlParameter->getId()}");
           $formMapper->setObject($urlParameter)
-            ->setName("form_{$urlParameter->getId()}")
+            ->setPathToTemplateDefault("@AustralAdmin/Form/Components/Fields")
             ->setFormTypeAction("edit")
             ->setTranslateDomain("austral");
           if($moduleObject)
@@ -135,12 +137,10 @@ class SeoAdmin extends Admin
             $formMapper->setModule($moduleObject);
           }
 
-          $formMapperMaster->addSubFormMapper("form_{$urlParameter->getId()}", $formMapper);
-
           /** @var FormTypeInterface $formType */
           $formType = clone $this->container->get('austral.form.type.master')
             ->setClass(ClassUtils::getClass($urlParameter))
-            ->setFormMapper($formMapperMaster);
+            ->setFormMapper($formMapper);
 
 
           if($type === "seo-all")
@@ -188,7 +188,9 @@ class SeoAdmin extends Admin
             );
           }
 
-          $form = $this->container->get('form.factory')->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
+          $form = $listAdminEvent->getAdminHandler()
+            ->getFormFactory()
+            ->createNamed("form_{$urlParameter->getId()}", get_class($formType), $formMapper->getObject());
           if($request->getMethod() == 'POST')
           {
             $form->handleRequest($request);
