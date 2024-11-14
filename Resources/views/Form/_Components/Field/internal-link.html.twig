@@ -1,10 +1,10 @@
 {% for urlParameter in field.vars.urlParameters %}
   <div id="field-form_master_internalLink-content" class="field-content field-content-textField">
     <label>{{ "fields.internalLink.entitled"|trans({}, form.mapper.translateDomain) }} {{ field.vars.urlParameters|length > 1 ? urlParameter.domain : "" }}</label>
-    <div class="field field-typeValue">#INTERNAL_LINK_{{ urlParameter.classname }}_{{ urlParameter.id }}#</div>
+    <div class="field field-typeValue disabled">#INTERNAL_LINK_{{ urlParameter.classname }}_{{ urlParameter.id }}#</div>
   </div>
 {% endfor %}
 <div id="field-form_master_internalLink-content" class="field-content field-content-textField">
   <label>{{ "fields.internalLink.entitled"|trans({}, form.mapper.translateDomain) }} - Générique</label>
-  <div class="field field-typeValue">#INTERNAL_LINK_{{ form.mapper.object.classname }}_{{ form.mapper.object.id }}#</div>
+  <div class="field field-typeValue disabled">#INTERNAL_LINK_{{ form.mapper.object.classname }}_{{ form.mapper.object.id }}#</div>
 </div>
