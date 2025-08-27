@@ -92,6 +92,10 @@ class RedirectionManagement
   {
     if($this->seoConfiguration->get('redirection.auto'))
     {
+      if(!$newRefUrl)
+      {
+        return $this;
+      }
       /** @var RedirectionInterface|null $redirection */
       if($redirectionUrlDestination = $this->redirectionManager->retreiveByUrlDestination($newRefUrl, $urlParameter->getDomainId(), $urlParameter->getLanguage()))
       {
