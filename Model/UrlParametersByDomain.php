@@ -269,9 +269,10 @@ class UrlParametersByDomain
   }
 
   /**
+   * @param bool $viewObject
    * @return array
    */
-  public function getUrlParametersPathIndexed(): array
+  public function getUrlParametersPathIndexed(bool $viewObject = false): array
   {
     $urlParametersPathForSitemap = array();
     /** @var UrlParameterInterface $urlParameter */
@@ -279,7 +280,7 @@ class UrlParametersByDomain
     {
       if($urlParameter->getInSitemap() && $urlParameter->getIsIndex() && $urlParameter->isPublished())
       {
-        $urlParametersPathForSitemap[$urlParameter->getPath()] = $urlParameter->getId();
+        $urlParametersPathForSitemap[$urlParameter->getPath()] = $viewObject ? $urlParameter : $urlParameter->getId();;
       }
     }
     ksort($urlParametersPathForSitemap);
@@ -479,6 +480,14 @@ class UrlParametersByDomain
   public function getNameByKeyLinks(): array
   {
     return $this->nameByKeyLinks;
+  }
+
+  /**
+   * @return array
+   */
+  public function getPathByKeyLinks(): array
+  {
+    return $this->pathByKeyLinks;
   }
 
   /**
