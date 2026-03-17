@@ -211,6 +211,11 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   protected ?DomainInterface $domain = null;
 
   /**
+   * @var bool
+   */
+  protected bool $isCurrent = false;
+
+  /**
    * Constructor
    * @throws Exception
    */
@@ -830,5 +835,26 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
     $this->isTreeView = $isTreeView;
     return $this;
   }
+
+  /**
+   * getIsCurrent
+   *
+   * @return bool
+   */
+  public function getIsCurrent(): bool
+  {
+    return $this->isCurrent;
+  }
+
+  /**
+   * @param bool $isCurrent
+   * @return $this
+   */
+  public function setIsCurrent(bool $isCurrent): UrlParameter
+  {
+    $this->isCurrent = $isCurrent;
+    return $this;
+  }
+
 
 }
