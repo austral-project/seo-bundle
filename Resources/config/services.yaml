@@ -5,6 +5,13 @@ services:
     public:         true
 
 
+
+  Austral\SeoBundle\Validator\AllowedDomainValidator: "@austral.seo.allowed_domain.validator"
+  austral.seo.allowed_domain.validator:
+    class:        Austral\SeoBundle\Validator\AllowedDomainValidator
+    arguments:
+      - '@austral.seo.config'
+
 ##### Austral Event Subscriber
   Austral\SeoBundle\EventSubscriber\UrlParameterSubscriber: "@austral.seo.url_parameter.event_subscriber"
   austral.seo.url_parameter.event_subscriber:

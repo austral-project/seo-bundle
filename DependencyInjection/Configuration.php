@@ -25,7 +25,7 @@ class Configuration implements ConfigurationInterface
    */
   public function getConfigTreeBuilder()
   {
-    $treeBuilder = new TreeBuilder('austral_entity_seo');
+    $treeBuilder = new TreeBuilder('austral_seo');
 
     $rootNode = $treeBuilder->getRootNode();
     $rootNode->children()
@@ -33,6 +33,9 @@ class Configuration implements ConfigurationInterface
         ->addDefaultsIfNotSet()
         ->children()
           ->booleanNode("auto")->defaultValue(true)->isRequired()->end()
+          ->arrayNode("allowed_domains")
+          ->scalarPrototype()->end()
+          ->end()
         ->end()
       ->end()
       ->arrayNode('nb_characters')
@@ -50,7 +53,8 @@ class Configuration implements ConfigurationInterface
   {
     return array(
       "redirection" =>  array(
-        "auto"        =>  true
+        "auto"        =>  true,
+        "allowed_domains" => array()
       ),
       "nb_characters" =>  array(
         "ref_title"         =>  70,

@@ -21,6 +21,7 @@ use Austral\EntityFileBundle\Annotation as AustralFile;
 use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\HttpBundle\Entity\Traits\FilterByDomainTrait;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
+use Austral\EntityBundle\Annotation\AustralEntitySanitize;
 
 use Austral\HttpBundle\Annotation\DomainFilter;
 
@@ -69,30 +70,35 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   /**
    * @var string|null
    * @ORM\Column(name="seo_title", type="string", length=255, nullable=true )
+   * @AustralEntitySanitize(config="default")
    */
   protected ?string $seoTitle = null;
   
   /**
    * @var string|null
    * @ORM\Column(name="seo_description", type="text", nullable=true )
+   * @AustralEntitySanitize(config="default")
    */
   protected ?string $seoDescription = null;
 
   /**
    * @var string|null
    * @ORM\Column(name="seo_canonical", type="string", length=255, nullable=true)
+   * @AustralEntitySanitize(config="default")
    */
   protected ?string $seoCanonical = null;
   
   /**
    * @var string|null
    * @ORM\Column(name="social_title", type="string", length=255, nullable=true )
+   * @AustralEntitySanitize(config="default")
    */
   protected ?string $socialTitle = null;
   
   /**
    * @var string|null
    * @ORM\Column(name="social_description", type="text", nullable=true )
+   * @AustralEntitySanitize(config="default")
    */
   protected ?string $socialDescription = null;
 

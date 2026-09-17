@@ -15,6 +15,7 @@ use Austral\AdminBundle\Admin\AdminModuleInterface;
 use Austral\AdminBundle\Admin\Event\FormAdminEvent;
 use Austral\AdminBundle\Admin\Event\ListAdminEvent;
 
+use Austral\SeoBundle\Validator\AllowedDomain;
 use Austral\FormBundle\Field as Field;
 
 use Austral\FormBundle\Mapper\Fieldset;
@@ -47,6 +48,7 @@ class RedirectionAdmin extends Admin implements AdminModuleInterface
    */
   public function configureFormMapper(FormAdminEvent $formAdminEvent)
   {
+
     $formAdminEvent->getFormMapper()
       ->addFieldset("fieldset.right")
         ->setPositionName(Fieldset::POSITION_RIGHT)
@@ -58,7 +60,7 @@ class RedirectionAdmin extends Admin implements AdminModuleInterface
       ->end()
       ->addFieldset("fieldset.generalInformation")
         ->add(Field\TextField::create("urlSource"))
-        ->add(Field\TextField::create("urlDestination"))
+        ->add(Field\TextField::create("urlDestination")->addConstraint(new AllowedDomain()))
         ->add(Field\IntegerField::create("statusCode"))
         ->add(Field\TextField::create("language"))
       ->end()
