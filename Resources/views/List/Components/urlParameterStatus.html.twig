@@ -1,6 +1,6 @@
 {% set actionsParameters = {} %}
 <div class="list-objects_contenaire-choices {{ col.value|length > 1 ? "multi-domain" : ""}}">
-{% for domainId, urlParametersByDomain in col.value%}
+{% for domainId, urlParametersByDomain in col.value %}
   <div class="urlParameters-by-domain">
     {% set domainNameIsView = false %}
     {% for language, urlParameter in urlParametersByDomain %}
@@ -21,7 +21,7 @@
         {% for value, action in col.actions(actionsParameters) %}
           {% set elements = elements|merge({
             (value): {
-              url: action.path~(col.value|length > 1 ? "?urlParameterId="~urlParameter.id : ""),
+              url: action.path~((col.value|length > 1 or urlParametersByDomain|length > 1) ? "?urlParameterId="~urlParameter.id : ""),
               entitled: action.entitled|trans({}, list.mapper.translateDomain),
               style: action.attr().style
             }
