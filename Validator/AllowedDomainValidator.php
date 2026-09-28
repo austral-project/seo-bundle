@@ -52,7 +52,6 @@ class AllowedDomainValidator extends ConstraintValidator
       $host = strtolower($host);
       $allowedDomains = $this->seoConfiguration->get("redirection.allowed_domains", array());
 
-      dump($allowedDomains);
       if (!in_array($host, $allowedDomains, true)) {
         $this->context->buildViolation($constraint->message)
           ->setParameter('{{ domain }}', $host)
