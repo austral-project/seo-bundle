@@ -10,7 +10,7 @@
 
 namespace Austral\SeoBundle\TwigExtension;
 
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Routing\AustralRouting;
 use Austral\SeoBundle\Services\UrlParameterManagement;

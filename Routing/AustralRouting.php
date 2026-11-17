@@ -10,7 +10,7 @@
 
 namespace Austral\SeoBundle\Routing;
 
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 use Austral\HttpBundle\Configuration\HttpConfiguration;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;

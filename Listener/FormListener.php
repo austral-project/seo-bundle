@@ -11,7 +11,7 @@
 namespace Austral\SeoBundle\Listener;
 
 use App\Entity\Austral\SeoBundle\UrlParameter;
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 use Austral\ListBundle\Column\Action;
 use Austral\SeoBundle\Configuration\seoConfiguration;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;

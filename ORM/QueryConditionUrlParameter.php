@@ -1,6 +1,6 @@
 <?php
 /*
- * This file is part of the Austral Entity Bundle package.
+ * This file is part of the Austral Seo Bundle package.
  *
  * (c) Austral <support@austral.dev>
  *

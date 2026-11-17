@@ -10,8 +10,8 @@
 
 namespace Austral\SeoBundle\Services;
 
-use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
+use Austral\Contracts\Entity\EntityInterface;
+use Austral\Contracts\Translate\TranslateMasterInterface;
 use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\EntityBundle\EntityManager\EntityManagerORMInterface;
 use Austral\EntityBundle\Mapping\EntityMapping;

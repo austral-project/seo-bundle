@@ -10,7 +10,7 @@
 
 namespace Austral\SeoBundle\Entity\Interfaces;
 
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 
 /**
  * Austral UrlParameter Interface.

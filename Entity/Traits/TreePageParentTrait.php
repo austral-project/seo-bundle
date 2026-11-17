@@ -10,7 +10,7 @@
  
 namespace Austral\SeoBundle\Entity\Traits;
 
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\SeoBundle\Entity\Interfaces\TreePageInterface;
 use Austral\ToolsBundle\AustralTools;

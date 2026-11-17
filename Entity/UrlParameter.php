@@ -11,8 +11,8 @@
 namespace Austral\SeoBundle\Entity;
 
 use Austral\EntityBundle\Entity\Entity;
-use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\FileInterface;
+use Austral\Contracts\Entity\EntityInterface;
+use Austral\Contracts\File\FileInterface;
 use Austral\EntityBundle\Entity\Traits\EntityTimestampableTrait;
 
 use Austral\EntityFileBundle\Entity\Traits\EntityFileTrait;
@@ -21,7 +21,7 @@ use Austral\EntityFileBundle\Annotation as AustralFile;
 use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\HttpBundle\Entity\Traits\FilterByDomainTrait;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
-use Austral\EntityBundle\Annotation\AustralEntitySanitize;
+use Austral\EntityBundle\Attribute\AustralEntitySanitize;
 
 use Austral\HttpBundle\Annotation\DomainFilter;
 
@@ -70,36 +70,36 @@ abstract class UrlParameter extends Entity implements EntityInterface, UrlParame
   /**
    * @var string|null
    * @ORM\Column(name="seo_title", type="string", length=255, nullable=true )
-   * @AustralEntitySanitize(config="default")
    */
+  #[AustralEntitySanitize("default")]
   protected ?string $seoTitle = null;
   
   /**
    * @var string|null
    * @ORM\Column(name="seo_description", type="text", nullable=true )
-   * @AustralEntitySanitize(config="default")
    */
+  #[AustralEntitySanitize("default")]
   protected ?string $seoDescription = null;
 
   /**
    * @var string|null
    * @ORM\Column(name="seo_canonical", type="string", length=255, nullable=true)
-   * @AustralEntitySanitize(config="default")
    */
+  #[AustralEntitySanitize("default")]
   protected ?string $seoCanonical = null;
   
   /**
    * @var string|null
    * @ORM\Column(name="social_title", type="string", length=255, nullable=true )
-   * @AustralEntitySanitize(config="default")
    */
+  #[AustralEntitySanitize("default")]
   protected ?string $socialTitle = null;
   
   /**
    * @var string|null
    * @ORM\Column(name="social_description", type="text", nullable=true )
-   * @AustralEntitySanitize(config="default")
    */
+  #[AustralEntitySanitize("default")]
   protected ?string $socialDescription = null;
 
   /**

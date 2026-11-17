@@ -108,6 +108,7 @@ fields:
     entitled:                                   Est auto generé ?
   internalLink:
     entitled:                                   Lien interne
+    generic:                                    Générique
 
 groups:
   seo:                                          SEO de la page

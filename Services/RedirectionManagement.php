@@ -11,7 +11,7 @@
 namespace Austral\SeoBundle\Services;
 
 
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 use Austral\SeoBundle\Configuration\seoConfiguration;
 use Austral\SeoBundle\Entity\Interfaces\RedirectionInterface;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;

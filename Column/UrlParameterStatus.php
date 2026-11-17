@@ -1,6 +1,6 @@
 <?php
 /*
- * This file is part of the Austral List Bundle package.
+ * This file is part of the Austral Seo Bundle package.
  *
  * (c) Austral <support@austral.dev>
  *
@@ -10,9 +10,9 @@
 
 namespace Austral\SeoBundle\Column;
 
-use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateChildInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
+use Austral\Contracts\Entity\EntityInterface;
+use Austral\Contracts\Translate\TranslateChildInterface;
+use Austral\Contracts\Translate\TranslateMasterInterface;
 use Austral\HttpBundle\Services\DomainsManagement;
 use Austral\ListBundle\Column\Action;
 use Austral\ListBundle\Column\Base\ColumnWithPath;

@@ -10,7 +10,7 @@
 
 namespace Austral\SeoBundle\Listener;
 
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 use Austral\EntityBundle\Event\EntityManagerEvent;
 use Austral\HttpBundle\Entity\Interfaces\DomainInterface;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;

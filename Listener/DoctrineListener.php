@@ -10,9 +10,9 @@
 
 namespace Austral\SeoBundle\Listener;
 
-use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateChildInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
+use Austral\Contracts\Entity\EntityInterface;
+use Austral\Contracts\Translate\TranslateChildInterface;
+use Austral\Contracts\Translate\TranslateMasterInterface;
 use Austral\EntityBundle\Mapping\Mapping;
 use Austral\SeoBundle\Entity\Interfaces\UrlParameterInterface;
 use Austral\SeoBundle\Entity\Redirection;

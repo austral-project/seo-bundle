@@ -10,11 +10,11 @@
 
 namespace Austral\SeoBundle\Listener;
 
-use Austral\SeoBundle\Annotation\UrlParameterObject;
-use Austral\SeoBundle\Annotation\UrlParameterAction;
+use Austral\SeoBundle\Attribute\UrlParameterObject;
+use Austral\SeoBundle\Attribute\UrlParameterAction;
 use Austral\SeoBundle\Mapping\UrlParameterMapping;
 
-use Austral\EntityBundle\EntityAnnotation\EntityAnnotations;
+use Austral\EntityBundle\EntityAttributes\EntityAttributes;
 use Austral\EntityBundle\Event\EntityMappingEvent;
 use Austral\EntityBundle\Mapping\EntityMapping;
 
@@ -41,42 +41,41 @@ class EntityMappingListener
   }
 
   /**
-   * @param EntityMappingEvent $entityAnnotationEvent
+   * @param EntityMappingEvent $entityMappingEvent
    *
    * @return void
    * @throws \Exception
    */
-  public function mapping(EntityMappingEvent $entityAnnotationEvent)
+  public function mapping(EntityMappingEvent $entityMappingEvent): void
   {
-    $initialiseEntitesAnnotations = $entityAnnotationEvent->getEntitiesAnnotations();
-
     /**
-     * @var EntityAnnotations $entityAnnotation
+     * @var EntityAttributes $entityAttribute
      */
-    foreach($initialiseEntitesAnnotations->all() as $entityAnnotation)
+    foreach($entityMappingEvent->getEntitiesAttributes()->all() as $entityAttribute)
     {
-      if(array_key_exists(UrlParameterObject::class, $entityAnnotation->getClassAnnotations()) || array_key_exists(UrlParameterAction::class, $entityAnnotation->getClassAnnotations()))
+      $classAttributes = $entityAttribute->getClassAttributes();
+      if(array_key_exists(UrlParameterObject::class, $classAttributes) || array_key_exists(UrlParameterAction::class, $classAttributes))
       {
-        if(!$entityMapping = $entityAnnotationEvent->getMapping()->getEntityMapping($entityAnnotation->getClassname()))
+        if(!$entityMapping = $entityMappingEvent->getMapping()->getEntityMapping($entityAttribute->getClassname()))
         {
-          $entityMapping = new EntityMapping($entityAnnotation->getClassname(), $entityAnnotation->getSlugger());
+          $entityMapping = new EntityMapping($entityAttribute->getClassname(), $entityAttribute->getSlugger());
         }
         $urlParameterMapping = new UrlParameterMapping();
-        if(array_key_exists(UrlParameterObject::class, $entityAnnotation->getClassAnnotations()))
+        if(array_key_exists(UrlParameterObject::class, $classAttributes))
         {
-          /** @var UrlParameterObject $urlParameterObjectAnnotation */
-          $urlParameterObjectAnnotation = $entityAnnotation->getClassAnnotations()[UrlParameterObject::class];
+          /** @var UrlParameterObject $urlParameterObjectAttribute */
+          $urlParameterObjectAttribute = $classAttributes[UrlParameterObject::class];
 
-          $urlParameterMapping->setMethodGenerateLastPath($urlParameterObjectAnnotation->methodGenerateLastPath);
-          $urlParameterMapping->setMethodUrlName($urlParameterObjectAnnotation->methodUrlName);
-          if(!$keyForObjectLink = $urlParameterObjectAnnotation->keyForObjectLink)
+          $urlParameterMapping->setMethodGenerateLastPath($urlParameterObjectAttribute->methodGenerateLastPath);
+          $urlParameterMapping->setMethodUrlName($urlParameterObjectAttribute->methodUrlName);
+          if(!$keyForObjectLink = $urlParameterObjectAttribute->keyForObjectLink)
           {
             $keyForObjectLink = (new \ReflectionClass($entityMapping->entityClass))->getShortName();
           }
           $urlParameterMapping->setKeyForObjectLink($keyForObjectLink);
         }
         $entityMapping->addEntityClassMapping($urlParameterMapping);
-        $entityAnnotationEvent->getMapping()->addEntityMapping($entityAnnotation->getClassname(), $entityMapping);
+        $entityMappingEvent->getMapping()->addEntityMapping($entityAttribute->getClassname(), $entityMapping);
       }
     }
   }

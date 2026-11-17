@@ -100,6 +100,7 @@ fields:
     entitled:                                   Is Auto generate ?
   internalLink:
     entitled:                                   Internal link
+    generic:                                    Generic
 
 groups:
   seo:                                          Seo of the page

@@ -5,6 +5,6 @@
   </div>
 {% endfor %}
 <div id="field-form_master_internalLink-content" class="field-content field-content-textField">
-  <label>{{ "fields.internalLink.entitled"|trans({}, form.mapper.translateDomain) }} - Générique</label>
+  <label>{{ "fields.internalLink.entitled"|trans({}, form.mapper.translateDomain) }} - {{ "fields.internalLink.generic"|trans({}, form.mapper.translateDomain) }}</label>
   <div class="field field-typeValue disabled">#INTERNAL_LINK_{{ form.mapper.object.classname }}_{{ form.mapper.object.id }}#</div>
 </div>

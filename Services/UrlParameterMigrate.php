@@ -10,7 +10,7 @@
 
 namespace Austral\SeoBundle\Services;
 
-use Austral\EntityBundle\Entity\EntityInterface;
+use Austral\Contracts\Entity\EntityInterface;
 use Austral\EntityBundle\Entity\Interfaces\RobotInterface;
 use Austral\EntityBundle\Entity\Interfaces\SeoInterface;
 use Austral\EntityBundle\Entity\Interfaces\SocialNetworkInterface;

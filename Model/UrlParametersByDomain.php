@@ -11,8 +11,8 @@
 namespace Austral\SeoBundle\Model;
 
 use App\Entity\Austral\SeoBundle\UrlParameter;
-use Austral\EntityBundle\Entity\EntityInterface;
-use Austral\EntityBundle\Entity\Interfaces\TranslateMasterInterface;
+use Austral\Contracts\Entity\EntityInterface;
+use Austral\Contracts\Translate\TranslateMasterInterface;
 use Austral\EntityBundle\EntityManager\EntityManagerORMInterface;
 use Austral\HttpBundle\Mapping\DomainFilterMapping;
 use Austral\HttpBundle\Services\DomainsManagement;
