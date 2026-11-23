@@ -19,17 +19,17 @@ use Austral\Contracts\Entity\EntityInterface;
 interface UrlParameterInterface
 {
 
-  const STATUS_PUBLISHED = "published";
-  const STATUS_UNPUBLISHED = "unpublished";
-  const STATUS_DRAFT = "draft";
+  const string STATUS_PUBLISHED = "published";
+  const string STATUS_UNPUBLISHED = "unpublished";
+  const string STATUS_DRAFT = "draft";
 
-  const TYPE_OBJECT = "object";
-  const TYPE_ACTION = "action";
+  const string TYPE_OBJECT = "object";
+  const string TYPE_ACTION = "action";
 
-  const SECURITY_USER = "user";
-  const SECURITY_PASSWORD = "password";
+  const string SECURITY_USER = "user";
+  const string SECURITY_PASSWORD = "password";
 
-  const CHOICE_VALUE_FIELDNAME = "urlParameter.status";
+  const string CHOICE_VALUE_FIELDNAME = "urlParameter.status";
 
   /**
    * @return string|null
@@ -388,6 +388,5 @@ interface UrlParameterInterface
 
 }
 
-    
-    
-      
+
+
